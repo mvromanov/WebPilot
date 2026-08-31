@@ -6,6 +6,67 @@ type Props = {
   onChange: (workflow: Workflow) => void;
 };
 
+const stepTypes: WorkflowStep['type'][] = [
+  'goto',
+  'gotoIfUrlMissing',
+  'waitFor',
+  'waitUntilHidden',
+  'act',
+  'extractText',
+];
+
+function createStep(type: WorkflowStep['type'] = 'goto'): WorkflowStep {
+  switch (type) {
+    case 'goto':
+      return { type, url: '' };
+    case 'gotoIfUrlMissing':
+      return { type, urlFragment: '', url: '' };
+    case 'waitFor':
+      return { type, selector: '', timeoutMs: 15_000, label: 'Wait for element' };
+    case 'waitUntilHidden':
+      return { type, selector: '', pollMs: 1_000, label: 'Wait until hidden' };
+    case 'act':
+      return { type, instruction: '', label: 'Perform action' };
+    case 'extractText':
+      return { type, selector: '', timeoutMs: 15_000, label: 'Extract text' };
+  }
+}
+
+function changeStepType(step: WorkflowStep, type: WorkflowStep['type']): WorkflowStep {
+  const url = 'url' in step ? step.url : '';
+  const selector = 'selector' in step ? step.selector : '';
+  const label = 'label' in step ? step.label : '';
+  const timeoutMs = 'timeoutMs' in step ? step.timeoutMs : 15_000;
+
+  switch (type) {
+    case 'goto':
+      return { type, url };
+    case 'gotoIfUrlMissing':
+      return {
+        type,
+        urlFragment: step.type === 'gotoIfUrlMissing' ? step.urlFragment : '',
+        url,
+      };
+    case 'waitFor':
+      return { type, selector, timeoutMs, label: label || 'Wait for element' };
+    case 'waitUntilHidden':
+      return {
+        type,
+        selector,
+        pollMs: step.type === 'waitUntilHidden' ? step.pollMs : 1_000,
+        label: label || 'Wait until hidden',
+      };
+    case 'act':
+      return {
+        type,
+        instruction: step.type === 'act' ? step.instruction : '',
+        label: label || 'Perform action',
+      };
+    case 'extractText':
+      return { type, selector, timeoutMs, label: label || 'Extract text' };
+  }
+}
+
 type FieldProps = {
   label: string;
   value: string | number;
@@ -85,6 +146,18 @@ export function WorkflowStepsEditor({ workflow, onChange }: Props) {
     onChange({ steps });
   };
 
+  const insertStep = (index: number) => {
+    if (!workflow) return;
+    const steps = [...workflow.steps];
+    steps.splice(index + 1, 0, createStep());
+    onChange({ steps });
+  };
+
+  const deleteStep = (index: number) => {
+    if (!workflow || workflow.steps.length === 1) return;
+    onChange({ steps: workflow.steps.filter((_, currentIndex) => currentIndex !== index) });
+  };
+
   return (
     <details className="steps-editor">
       <summary>
@@ -99,8 +172,22 @@ export function WorkflowStepsEditor({ workflow, onChange }: Props) {
             {workflow.steps.map((step, index) => (
               <section className="step-card" key={`${index}-${step.type}`}>
                 <header>
-                  <span className="step-number">{index + 1}</span>
-                  <strong>{step.type}</strong>
+                  <div className="step-identity">
+                    <span className="step-number">{index + 1}</span>
+                    <label className="step-type-field">
+                      <span className="sr-only">Action for step {index + 1}</span>
+                      <select
+                        value={step.type}
+                        onChange={(event) => updateStep(index, changeStepType(step, event.target.value as WorkflowStep['type']))}
+                      >
+                        {stepTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                      </select>
+                    </label>
+                  </div>
+                  <div className="step-card-actions">
+                    <button type="button" onClick={() => insertStep(index)}>+ Insert after</button>
+                    <button type="button" className="step-delete" disabled={workflow.steps.length === 1} onClick={() => deleteStep(index)}>Delete</button>
+                  </div>
                 </header>
                 <div className="step-fields">
                   <StepFields step={step} onChange={(updatedStep) => updateStep(index, updatedStep)} />
