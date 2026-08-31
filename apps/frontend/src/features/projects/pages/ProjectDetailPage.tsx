@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { deleteProject, loadProject } from '../api/projectsApi';
+import { generateSteps } from '../../steps/api/stepsApi';
 import type { Project } from '../types';
 import './ProjectDetailPage.css';
 
@@ -15,6 +16,9 @@ export function ProjectDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generatedJson, setGeneratedJson] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -43,6 +47,20 @@ export function ProjectDetailPage() {
     }
   };
 
+  const handleGenerate = async () => {
+    if (!project?.originalPrompt) return;
+    setIsGenerating(true);
+    setGenerationError(null);
+    try {
+      const workflow = await generateSteps(project.originalPrompt);
+      setGeneratedJson(JSON.stringify(workflow, null, 2));
+    } catch (caughtError) {
+      setGenerationError(caughtError instanceof Error ? caughtError.message : 'Could not generate workflow steps');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   if (isLoading) return <div className="loading-state" role="status">Loading project…</div>;
   if (error && !project) {
     return (
@@ -59,12 +77,25 @@ export function ProjectDetailPage() {
       <Link className="back-link" to="/">← Projects</Link>
       <div className="detail-heading">
         <div><p className="section-label">Project</p><h1>{project.name}</h1></div>
-        <button className="danger-button" type="button" disabled={isDeleting} onClick={handleDelete}>{isDeleting ? 'Deleting…' : 'Delete project'}</button>
+        <div className="detail-actions">
+          <button className="primary-button" type="button" disabled={isGenerating || !project.originalPrompt} onClick={handleGenerate}>{isGenerating ? 'Generating…' : 'Generate'}</button>
+          <button className="danger-button" type="button" disabled={isDeleting} onClick={handleDelete}>{isDeleting ? 'Deleting…' : 'Delete project'}</button>
+        </div>
       </div>
       {error && <p className="form-error" role="alert">{error}</p>}
       <div className="detail-panel">
         <div><span>Description</span><p>{project.description || 'No description provided.'}</p></div>
         <div className="original-prompt"><span>Original prompt</span><pre>{project.originalPrompt || 'No original prompt was stored for this project.'}</pre></div>
+        {generationError && <p className="form-error" role="alert">{generationError}</p>}
+        <label className="generated-json-field">
+          <span>Generated steps JSON <small>Temporary</small></span>
+          <textarea
+            readOnly
+            rows={16}
+            value={generatedJson}
+            placeholder="Click Generate to preview the workflow JSON. It is not saved yet."
+          />
+        </label>
         <dl>
           <div><dt>Created</dt><dd>{formatDate(project.createdAt)}</dd></div>
           <div><dt>Last updated</dt><dd>{formatDate(project.updatedAt)}</dd></div>

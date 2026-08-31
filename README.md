@@ -46,6 +46,7 @@ database and its tables are created automatically when the backend starts.
 - `GET /api/projects` — list projects
 - `GET /api/projects/:id` — load one project
 - `DELETE /api/projects/:id` — delete one project
+- `POST /api/steps/generate` — generate executable workflow steps from an original prompt
 
 Create requests accept JSON with a required `name`, required `originalPrompt`,
 and optional `description`:

@@ -14,4 +14,6 @@ export const env = {
   databasePath: process.env.DATABASE_PATH
     ? path.resolve(process.cwd(), process.env.DATABASE_PATH)
     : fileURLToPath(new URL('../../data/webpilot.db', import.meta.url)),
+  lmStudioUrl: process.env.LM_STUDIO_URL ?? 'http://localhost:1234/v1/chat/completions',
+  lmStudioModel: process.env.LM_STUDIO_MODEL ?? 'qwen3.6-35b-a3b-ud-mlx',
 };
