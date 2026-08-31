@@ -6,6 +6,7 @@ import { projects, type ProjectRecord } from '../db/schema.js';
 export type CreateProjectInput = {
   name: string;
   description: string;
+  originalPrompt: string;
 };
 
 export function listProjects(): ProjectRecord[] {
@@ -22,6 +23,7 @@ export function createProject(input: CreateProjectInput): ProjectRecord {
     id: randomUUID(),
     name: input.name,
     description: input.description,
+    originalPrompt: input.originalPrompt,
     createdAt: now,
     updatedAt: now,
   };

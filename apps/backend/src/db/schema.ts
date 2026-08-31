@@ -7,6 +7,7 @@ export const projects = sqliteTable(
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     description: text('description').notNull().default(''),
+    originalPrompt: text('original_prompt').notNull().default(''),
     createdAt: integer('created_at', { mode: 'timestamp' })
       .notNull()
       .default(sql`(unixepoch())`),

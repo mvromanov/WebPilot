@@ -47,11 +47,13 @@ database and its tables are created automatically when the backend starts.
 - `GET /api/projects/:id` — load one project
 - `DELETE /api/projects/:id` — delete one project
 
-Create requests accept JSON with a required `name` and optional `description`:
+Create requests accept JSON with a required `name`, required `originalPrompt`,
+and optional `description`:
 
 ```json
 {
   "name": "Customer onboarding",
-  "description": "Automates the customer onboarding flow."
+  "description": "Automates the customer onboarding flow.",
+  "originalPrompt": "Create a browser flow that provisions a new customer account."
 }
 ```

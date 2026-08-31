@@ -12,12 +12,13 @@ type Props = {
 export function CreateProjectDialog({ isOpen, isSubmitting, error, onClose, onSubmit }: Props) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [originalPrompt, setOriginalPrompt] = useState('');
 
   if (!isOpen) return null;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await onSubmit({ name, description });
+    await onSubmit({ name, description, originalPrompt });
   };
 
   return (
@@ -36,10 +37,14 @@ export function CreateProjectDialog({ isOpen, isSubmitting, error, onClose, onSu
             <span>Description <small>Optional</small></span>
             <textarea maxLength={1000} rows={4} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="What will this project automate?" />
           </label>
+          <label className="form-field">
+            <span>Original prompt</span>
+            <textarea required maxLength={50000} rows={6} value={originalPrompt} onChange={(event) => setOriginalPrompt(event.target.value)} placeholder="Paste the prompt that defines this project…" />
+          </label>
           {error && <p className="form-error" role="alert">{error}</p>}
           <div className="dialog-actions">
             <button type="button" className="secondary-button" onClick={onClose}>Cancel</button>
-            <button type="submit" className="primary-button" disabled={isSubmitting || !name.trim()}>{isSubmitting ? 'Creating…' : 'Create project'}</button>
+            <button type="submit" className="primary-button" disabled={isSubmitting || !name.trim() || !originalPrompt.trim()}>{isSubmitting ? 'Creating…' : 'Create project'}</button>
           </div>
         </form>
       </section>

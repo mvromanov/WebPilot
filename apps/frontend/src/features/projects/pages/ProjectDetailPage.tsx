@@ -64,6 +64,7 @@ export function ProjectDetailPage() {
       {error && <p className="form-error" role="alert">{error}</p>}
       <div className="detail-panel">
         <div><span>Description</span><p>{project.description || 'No description provided.'}</p></div>
+        <div className="original-prompt"><span>Original prompt</span><pre>{project.originalPrompt || 'No original prompt was stored for this project.'}</pre></div>
         <dl>
           <div><dt>Created</dt><dd>{formatDate(project.createdAt)}</dd></div>
           <div><dt>Last updated</dt><dd>{formatDate(project.updatedAt)}</dd></div>
