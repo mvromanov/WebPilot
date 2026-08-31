@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { deleteProject, loadProject } from '../api/projectsApi';
+import { deleteProject, loadProject, updateProject } from '../api/projectsApi';
 import { generateSteps } from '../../steps/api/stepsApi';
+import type { Workflow } from '../../steps/types';
 import type { Project } from '../types';
 import './ProjectDetailPage.css';
 
@@ -16,14 +17,21 @@ export function ProjectDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generatedJson, setGeneratedJson] = useState('');
+  const [originalPrompt, setOriginalPrompt] = useState('');
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     loadProject(projectId, controller.signal)
-      .then(setProject)
+      .then((loadedProject) => {
+        setProject(loadedProject);
+        setOriginalPrompt(loadedProject.originalPrompt);
+        setGeneratedJson(loadedProject.steps ? JSON.stringify(loadedProject.steps, null, 2) : '');
+      })
       .catch((caughtError: unknown) => {
         if (caughtError instanceof DOMException && caughtError.name === 'AbortError') return;
         setError(caughtError instanceof Error ? caughtError.message : 'Could not load project');
@@ -48,16 +56,37 @@ export function ProjectDetailPage() {
   };
 
   const handleGenerate = async () => {
-    if (!project?.originalPrompt) return;
+    if (!originalPrompt.trim()) return;
     setIsGenerating(true);
     setGenerationError(null);
+    setSaveMessage(null);
     try {
-      const workflow = await generateSteps(project.originalPrompt);
+      const workflow = await generateSteps(originalPrompt);
       setGeneratedJson(JSON.stringify(workflow, null, 2));
     } catch (caughtError) {
       setGenerationError(caughtError instanceof Error ? caughtError.message : 'Could not generate workflow steps');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!project || !originalPrompt.trim()) return;
+    setIsSaving(true);
+    setError(null);
+    setSaveMessage(null);
+
+    try {
+      const steps = generatedJson ? JSON.parse(generatedJson) as Workflow : null;
+      const updatedProject = await updateProject(project.id, { originalPrompt, steps });
+      setProject(updatedProject);
+      setOriginalPrompt(updatedProject.originalPrompt);
+      setGeneratedJson(updatedProject.steps ? JSON.stringify(updatedProject.steps, null, 2) : '');
+      setSaveMessage('Saved');
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Could not save project');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -77,21 +106,34 @@ export function ProjectDetailPage() {
       <Link className="back-link" to="/">← Projects</Link>
       <div className="detail-heading">
         <div><p className="section-label">Project</p><h1>{project.name}</h1></div>
-        <button className="danger-button" type="button" disabled={isDeleting} onClick={handleDelete}>{isDeleting ? 'Deleting…' : 'Delete project'}</button>
+        <div className="detail-actions">
+          <button className="secondary-button" type="button" disabled={isSaving || !originalPrompt.trim()} onClick={handleSave}>{isSaving ? 'Saving…' : 'Save'}</button>
+          <button className="danger-button" type="button" disabled={isDeleting} onClick={handleDelete}>{isDeleting ? 'Deleting…' : 'Delete project'}</button>
+        </div>
       </div>
       {error && <p className="form-error" role="alert">{error}</p>}
+      {saveMessage && <p className="save-message" role="status">{saveMessage}</p>}
       <div className="detail-panel">
         <div><span>Description</span><p>{project.description || 'No description provided.'}</p></div>
         <div className="original-prompt">
           <span>Original prompt</span>
-          <pre>{project.originalPrompt || 'No original prompt was stored for this project.'}</pre>
+          <textarea
+            rows={10}
+            maxLength={50000}
+            value={originalPrompt}
+            onChange={(event) => {
+              setOriginalPrompt(event.target.value);
+              setSaveMessage(null);
+            }}
+            placeholder="Enter the prompt that defines this project."
+          />
           <div className="prompt-actions">
-            <button className="primary-button" type="button" disabled={isGenerating || !project.originalPrompt} onClick={handleGenerate}>{isGenerating ? 'Generating…' : 'Generate'}</button>
+            <button className="primary-button" type="button" disabled={isGenerating || !originalPrompt.trim()} onClick={handleGenerate}>{isGenerating ? 'Generating…' : 'Generate'}</button>
           </div>
         </div>
         {generationError && <p className="form-error" role="alert">{generationError}</p>}
         <label className="generated-json-field">
-          <span>Generated steps JSON <small>Temporary</small></span>
+          <span>Generated steps JSON <small>Saved with the project when you click Save</small></span>
           <textarea
             readOnly
             rows={16}

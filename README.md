@@ -45,6 +45,7 @@ database and its tables are created automatically when the backend starts.
 - `POST /api/projects` — create a project
 - `GET /api/projects` — list projects
 - `GET /api/projects/:id` — load one project
+- `PATCH /api/projects/:id` — save the original prompt and generated steps
 - `DELETE /api/projects/:id` — delete one project
 - `POST /api/steps/generate` — generate executable workflow steps from an original prompt
 

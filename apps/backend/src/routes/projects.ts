@@ -4,8 +4,9 @@ import {
   deleteProject,
   listProjects,
   loadProject,
+  updateProject,
 } from '../projects/project.repository.js';
-import { createProjectSchema, projectIdSchema } from '../projects/project.schemas.js';
+import { createProjectSchema, projectIdSchema, updateProjectSchema } from '../projects/project.schemas.js';
 import { serializeProject } from '../projects/project.serializer.js';
 
 export const projectsRouter = Router();
@@ -41,6 +42,33 @@ projectsRouter.get('/:id', (request, response) => {
   }
 
   const project = loadProject(parsedId.data);
+
+  if (!project) {
+    response.status(404).json({ error: 'Project not found' });
+    return;
+  }
+
+  response.json({ data: serializeProject(project) });
+});
+
+projectsRouter.patch('/:id', (request, response) => {
+  const parsedId = projectIdSchema.safeParse(request.params.id);
+  const parsedBody = updateProjectSchema.safeParse(request.body);
+
+  if (!parsedId.success) {
+    response.status(400).json({ error: parsedId.error.issues[0]?.message });
+    return;
+  }
+
+  if (!parsedBody.success) {
+    response.status(400).json({
+      error: 'Invalid project update',
+      details: parsedBody.error.flatten().fieldErrors,
+    });
+    return;
+  }
+
+  const project = updateProject(parsedId.data, parsedBody.data);
 
   if (!project) {
     response.status(404).json({ error: 'Project not found' });

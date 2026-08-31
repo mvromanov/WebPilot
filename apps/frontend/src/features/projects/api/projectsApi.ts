@@ -1,4 +1,4 @@
-import type { CreateProjectInput, Project } from '../types';
+import type { CreateProjectInput, Project, UpdateProjectInput } from '../types';
 
 type ApiResponse<T> = { data: T };
 type ApiErrorResponse = { error?: string };
@@ -32,6 +32,14 @@ export async function loadProject(id: string, signal?: AbortSignal): Promise<Pro
 export async function createProject(input: CreateProjectInput): Promise<Project> {
   return (await request<ApiResponse<Project>>('/api/projects', {
     method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
+  })).data;
+}
+
+export async function updateProject(id: string, input: UpdateProjectInput): Promise<Project> {
+  return (await request<ApiResponse<Project>>(`/api/projects/${id}`, {
+    method: 'PATCH',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(input),
   })).data;
