@@ -97,9 +97,13 @@ async function closeSessionResources(session: ProjectSession): Promise<void> {
   if (session.closePromise) return session.closePromise;
   if (!session.stagehand && !session.browser) return;
 
-  session.closePromise = session.stagehand
-    ? session.stagehand.close()
-    : session.browser!.close();
+  session.closePromise = (async () => {
+    try {
+      await session.stagehand?.close();
+    } finally {
+      await session.browser?.close();
+    }
+  })();
 
   try {
     await session.closePromise;
