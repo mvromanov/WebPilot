@@ -77,15 +77,18 @@ export function ProjectDetailPage() {
       <Link className="back-link" to="/">← Projects</Link>
       <div className="detail-heading">
         <div><p className="section-label">Project</p><h1>{project.name}</h1></div>
-        <div className="detail-actions">
-          <button className="primary-button" type="button" disabled={isGenerating || !project.originalPrompt} onClick={handleGenerate}>{isGenerating ? 'Generating…' : 'Generate'}</button>
-          <button className="danger-button" type="button" disabled={isDeleting} onClick={handleDelete}>{isDeleting ? 'Deleting…' : 'Delete project'}</button>
-        </div>
+        <button className="danger-button" type="button" disabled={isDeleting} onClick={handleDelete}>{isDeleting ? 'Deleting…' : 'Delete project'}</button>
       </div>
       {error && <p className="form-error" role="alert">{error}</p>}
       <div className="detail-panel">
         <div><span>Description</span><p>{project.description || 'No description provided.'}</p></div>
-        <div className="original-prompt"><span>Original prompt</span><pre>{project.originalPrompt || 'No original prompt was stored for this project.'}</pre></div>
+        <div className="original-prompt">
+          <span>Original prompt</span>
+          <pre>{project.originalPrompt || 'No original prompt was stored for this project.'}</pre>
+          <div className="prompt-actions">
+            <button className="primary-button" type="button" disabled={isGenerating || !project.originalPrompt} onClick={handleGenerate}>{isGenerating ? 'Generating…' : 'Generate'}</button>
+          </div>
+        </div>
         {generationError && <p className="form-error" role="alert">{generationError}</p>}
         <label className="generated-json-field">
           <span>Generated steps JSON <small>Temporary</small></span>
