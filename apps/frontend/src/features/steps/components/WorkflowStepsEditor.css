@@ -1,0 +1,16 @@
+.steps-editor { margin: -16px 0 28px; overflow: hidden; border: 1px solid #e1e3e8; border-radius: 10px; background: #fff; }
+.steps-editor summary { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; color: #4d535e; background: #fafafd; font-size: 12px; font-weight: 700; cursor: pointer; list-style-position: inside; }
+.steps-editor summary:hover { background: #f6f5ff; }
+.steps-count { color: #9297a1; font-size: 11px; font-weight: 600; }
+.steps-editor-content { padding: 16px; border-top: 1px solid #e8e9ed; }
+.steps-empty { margin: 8px 0; color: #8a909b; font-size: 12px; text-align: center; }
+.step-list { display: grid; gap: 12px; }
+.step-card { padding: 15px; border: 1px solid #e4e5e9; border-radius: 9px; background: #fcfcfd; }
+.step-card header { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
+.step-card header strong { color: #393e48; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
+.step-number { display: grid; width: 23px; height: 23px; place-items: center; border-radius: 7px; color: #5549d2; background: #ebe9ff; font-size: 10px; font-weight: 800; }
+.step-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+.step-field { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: #858b96; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.step-field input { width: 100%; height: 37px; padding: 0 10px; border: 1px solid #dcdee4; border-radius: 7px; outline: none; color: #3e434d; background: #fff; font-size: 12px; letter-spacing: 0; text-transform: none; }
+.step-field input:focus { border-color: #8c83ec; box-shadow: 0 0 0 3px rgb(93 80 230 / 9%); }
+@media (max-width: 700px) { .step-fields { grid-template-columns: 1fr; } }

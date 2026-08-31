@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { deleteProject, loadProject, updateProject } from '../api/projectsApi';
 import { executeSteps, generateSteps, stopSteps } from '../../steps/api/stepsApi';
 import type { Workflow } from '../../steps/types';
+import { WorkflowStepsEditor } from '../../steps/components/WorkflowStepsEditor';
 import type { Project } from '../types';
 import './ProjectDetailPage.css';
 
@@ -28,6 +29,15 @@ export function ProjectDetailPage() {
   const [executionError, setExecutionError] = useState<string | null>(null);
   const [executionResult, setExecutionResult] = useState<string | null>(null);
   const stopRequestedRef = useRef(false);
+
+  const visualWorkflow = useMemo(() => {
+    if (!generatedJson) return null;
+    try {
+      return JSON.parse(generatedJson) as Workflow;
+    } catch {
+      return null;
+    }
+  }, [generatedJson]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -181,6 +191,13 @@ export function ProjectDetailPage() {
             placeholder="Click Generate to preview the workflow JSON. It is not saved yet."
           />
         </label>
+        <WorkflowStepsEditor
+          workflow={visualWorkflow}
+          onChange={(workflow) => {
+            setGeneratedJson(JSON.stringify(workflow, null, 2));
+            setSaveMessage(null);
+          }}
+        />
         <div className="workflow-actions">
           <button className="primary-button" type="button" disabled={isExecuting || !generatedJson} onClick={handleExecute}>
             {isExecuting ? 'Executing…' : 'Execute'}
