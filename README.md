@@ -48,6 +48,8 @@ database and its tables are created automatically when the backend starts.
 - `PATCH /api/projects/:id` — save the original prompt and generated steps
 - `DELETE /api/projects/:id` — delete one project
 - `POST /api/steps/generate` — generate executable workflow steps from an original prompt
+- `POST /api/steps/execute/:projectId` — execute a validated workflow in a headed local browser
+- `POST /api/steps/stop/:projectId` — stop the project's active browser session
 
 Create requests accept JSON with a required `name`, required `originalPrompt`,
 and optional `description`:

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { deleteProject, loadProject, updateProject } from '../api/projectsApi';
-import { generateSteps } from '../../steps/api/stepsApi';
+import { executeSteps, generateSteps, stopSteps } from '../../steps/api/stepsApi';
 import type { Workflow } from '../../steps/types';
 import type { Project } from '../types';
 import './ProjectDetailPage.css';
@@ -19,10 +19,15 @@ export function ProjectDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generatedJson, setGeneratedJson] = useState('');
   const [originalPrompt, setOriginalPrompt] = useState('');
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [executionError, setExecutionError] = useState<string | null>(null);
+  const [executionResult, setExecutionResult] = useState<string | null>(null);
+  const stopRequestedRef = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -90,6 +95,41 @@ export function ProjectDetailPage() {
     }
   };
 
+  const handleExecute = async () => {
+    if (!project || !generatedJson) return;
+    setIsExecuting(true);
+    stopRequestedRef.current = false;
+    setExecutionError(null);
+    setExecutionResult(null);
+
+    try {
+      const workflow = JSON.parse(generatedJson) as Workflow;
+      setExecutionResult(await executeSteps(project.id, workflow));
+    } catch (caughtError) {
+      if (stopRequestedRef.current) return;
+      setExecutionError(caughtError instanceof Error ? caughtError.message : 'Could not execute workflow steps');
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
+  const handleStop = async () => {
+    if (!project) return;
+    setIsStopping(true);
+    setExecutionError(null);
+    stopRequestedRef.current = true;
+
+    try {
+      await stopSteps(project.id);
+      setExecutionResult('Browser session stopped');
+    } catch (caughtError) {
+      stopRequestedRef.current = false;
+      setExecutionError(caughtError instanceof Error ? caughtError.message : 'Could not stop browser session');
+    } finally {
+      setIsStopping(false);
+    }
+  };
+
   if (isLoading) return <div className="loading-state" role="status">Loading project…</div>;
   if (error && !project) {
     return (
@@ -141,6 +181,23 @@ export function ProjectDetailPage() {
             placeholder="Click Generate to preview the workflow JSON. It is not saved yet."
           />
         </label>
+        <div className="workflow-actions">
+          <button className="primary-button" type="button" disabled={isExecuting || !generatedJson} onClick={handleExecute}>
+            {isExecuting ? 'Executing…' : 'Execute'}
+          </button>
+          {isExecuting && (
+            <button className="danger-button" type="button" disabled={isStopping} onClick={handleStop}>
+              {isStopping ? 'Stopping…' : 'Stop'}
+            </button>
+          )}
+        </div>
+        {executionError && <p className="form-error" role="alert">{executionError}</p>}
+        {executionResult && (
+          <div className="execution-result" role="status">
+            <span>Execution result</span>
+            <pre>{executionResult}</pre>
+          </div>
+        )}
         <dl>
           <div><dt>Created</dt><dd>{formatDate(project.createdAt)}</dd></div>
           <div><dt>Last updated</dt><dd>{formatDate(project.updatedAt)}</dd></div>

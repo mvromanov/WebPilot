@@ -16,6 +16,10 @@
 .generated-json-field { display: flex; flex-direction: column; gap: 10px; margin: 0 0 28px; color: #9297a1; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .generated-json-field small { font-weight: 500; text-transform: none; }
 .generated-json-field textarea { width: 100%; padding: 16px; border: 1px solid #e1e3e8; border-radius: 9px; outline: none; color: #343943; background: #f8f8fa; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; line-height: 1.6; letter-spacing: 0; resize: vertical; text-transform: none; }
+.workflow-actions { display: flex; justify-content: flex-end; gap: 10px; margin: -16px 0 28px; }
+.execution-result { margin: 0 0 28px; }
+.execution-result > span { color: #9297a1; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.execution-result pre { margin: 10px 0 0; padding: 16px; overflow: auto; border: 1px solid #d9ece3; border-radius: 9px; color: #27624a; background: #f2faf6; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; }
 .detail-panel dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin: 0; padding-top: 24px; border-top: 1px solid #eceef1; }
 .detail-panel dd { margin: 8px 0 0; overflow-wrap: anywhere; color: #555b66; font-size: 12px; }
 .detail-panel code { font-size: 11px; }
