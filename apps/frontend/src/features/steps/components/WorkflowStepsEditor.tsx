@@ -1,7 +1,9 @@
 import type { Workflow, WorkflowStep } from '../types';
+import { StepArtifactsPanel } from './StepArtifactsPanel';
 import './WorkflowStepsEditor.css';
 
 type Props = {
+  projectId: string;
   workflow: Workflow | null;
   onChange: (workflow: Workflow) => void;
 };
@@ -16,19 +18,20 @@ const stepTypes: WorkflowStep['type'][] = [
 ];
 
 function createStep(type: WorkflowStep['type'] = 'goto'): WorkflowStep {
+  const id = crypto.randomUUID();
   switch (type) {
     case 'goto':
-      return { type, url: '' };
+      return { id, type, url: '' };
     case 'gotoIfUrlMissing':
-      return { type, urlFragment: '', url: '' };
+      return { id, type, urlFragment: '', url: '' };
     case 'waitFor':
-      return { type, selector: '', timeoutMs: 15_000, label: 'Wait for element' };
+      return { id, type, selector: '', timeoutMs: 15_000, label: 'Wait for element' };
     case 'waitUntilHidden':
-      return { type, selector: '', pollMs: 1_000, label: 'Wait until hidden' };
+      return { id, type, selector: '', pollMs: 1_000, label: 'Wait until hidden' };
     case 'act':
-      return { type, instruction: '', label: 'Perform action' };
+      return { id, type, instruction: '', label: 'Perform action' };
     case 'extractText':
-      return { type, selector: '', timeoutMs: 15_000, label: 'Extract text' };
+      return { id, type, selector: '', timeoutMs: 15_000, label: 'Extract text' };
   }
 }
 
@@ -40,18 +43,20 @@ function changeStepType(step: WorkflowStep, type: WorkflowStep['type']): Workflo
 
   switch (type) {
     case 'goto':
-      return { type, url };
+      return { id: step.id, type, url };
     case 'gotoIfUrlMissing':
       return {
         type,
+        id: step.id,
         urlFragment: step.type === 'gotoIfUrlMissing' ? step.urlFragment : '',
         url,
       };
     case 'waitFor':
-      return { type, selector, timeoutMs, label: label || 'Wait for element' };
+      return { id: step.id, type, selector, timeoutMs, label: label || 'Wait for element' };
     case 'waitUntilHidden':
       return {
         type,
+        id: step.id,
         selector,
         pollMs: step.type === 'waitUntilHidden' ? step.pollMs : 1_000,
         label: label || 'Wait until hidden',
@@ -59,11 +64,12 @@ function changeStepType(step: WorkflowStep, type: WorkflowStep['type']): Workflo
     case 'act':
       return {
         type,
+        id: step.id,
         instruction: step.type === 'act' ? step.instruction : '',
         label: label || 'Perform action',
       };
     case 'extractText':
-      return { type, selector, timeoutMs, label: label || 'Extract text' };
+      return { id: step.id, type, selector, timeoutMs, label: label || 'Extract text' };
   }
 }
 
@@ -139,7 +145,7 @@ function StepFields({ step, onChange }: { step: WorkflowStep; onChange: (step: W
   }
 }
 
-export function WorkflowStepsEditor({ workflow, onChange }: Props) {
+export function WorkflowStepsEditor({ projectId, workflow, onChange }: Props) {
   const updateStep = (index: number, step: WorkflowStep) => {
     if (!workflow) return;
     const steps = workflow.steps.map((current, currentIndex) => currentIndex === index ? step : current);
@@ -170,7 +176,7 @@ export function WorkflowStepsEditor({ workflow, onChange }: Props) {
         ) : (
           <div className="step-list">
             {workflow.steps.map((step, index) => (
-              <section className="step-card" key={`${index}-${step.type}`}>
+              <section className="step-card" key={step.id}>
                 <header>
                   <div className="step-identity">
                     <span className="step-number">{index + 1}</span>
@@ -192,6 +198,7 @@ export function WorkflowStepsEditor({ workflow, onChange }: Props) {
                 <div className="step-fields">
                   <StepFields step={step} onChange={(updatedStep) => updateStep(index, updatedStep)} />
                 </div>
+                <StepArtifactsPanel projectId={projectId} stepId={step.id} />
               </section>
             ))}
           </div>

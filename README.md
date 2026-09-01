@@ -42,6 +42,10 @@ backend configuration.
 Projects are stored locally in `apps/backend/data/webpilot.db` by default. The
 database and its tables are created automatically when the backend starts.
 
+Large per-step captures are represented by metadata in `step_artifacts`. Each
+artifact references a stable workflow step UUID and a local content path; captured
+DOM/HTML should be stored as a compressed file rather than embedded in `steps_json`.
+
 - `POST /api/projects` — create a project
 - `GET /api/projects` — list projects
 - `GET /api/projects/:id` — load one project
@@ -50,6 +54,10 @@ database and its tables are created automatically when the backend starts.
 - `POST /api/steps/generate` — generate executable workflow steps from an original prompt
 - `POST /api/steps/execute/:projectId` — execute a validated workflow in a headed local browser
 - `POST /api/steps/stop/:projectId` — stop the project's active browser session
+- `GET /api/projects/:projectId/steps/:stepId/artifacts` — list artifact metadata
+- `POST /api/projects/:projectId/steps/:stepId/artifacts` — store compressed DOM/HTML
+- `GET /api/projects/:projectId/steps/:stepId/artifacts/:artifactId` — fetch metadata and content
+- `DELETE /api/projects/:projectId/steps/:stepId/artifacts/:artifactId` — delete an artifact
 
 Create requests accept JSON with a required `name`, required `originalPrompt`,
 and optional `description`:

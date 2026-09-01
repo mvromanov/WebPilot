@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { randomUUID } from 'node:crypto';
 import { env } from '../config/env.js';
-import { workflowSchema, type Workflow } from './workflow.schema.js';
+import { plannedWorkflowSchema, type Workflow } from './workflow.schema.js';
 
 type LmStudioCompletion = {
   choices?: Array<{
@@ -61,7 +62,7 @@ export async function planWorkflow(originalPrompt: string): Promise<Workflow> {
         type: 'json_schema',
         json_schema: {
           name: 'browser_workflow',
-          schema: z.toJSONSchema(workflowSchema),
+          schema: z.toJSONSchema(plannedWorkflowSchema),
           strict: true,
         },
       },
@@ -73,5 +74,8 @@ export async function planWorkflow(originalPrompt: string): Promise<Workflow> {
   }
 
   const completion = await response.json() as LmStudioCompletion;
-  return workflowSchema.parse(parseCompletion(completion));
+  const plannedWorkflow = plannedWorkflowSchema.parse(parseCompletion(completion));
+  return {
+    steps: plannedWorkflow.steps.map((step) => ({ id: randomUUID(), ...step })),
+  } as Workflow;
 }

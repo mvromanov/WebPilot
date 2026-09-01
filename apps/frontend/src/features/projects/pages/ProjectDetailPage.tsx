@@ -192,6 +192,7 @@ export function ProjectDetailPage() {
           />
         </label>
         <WorkflowStepsEditor
+          projectId={project.id}
           workflow={visualWorkflow}
           onChange={(workflow) => {
             setGeneratedJson(JSON.stringify(workflow, null, 2));

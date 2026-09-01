@@ -21,3 +21,27 @@ export const projects = sqliteTable(
 );
 
 export type ProjectRecord = typeof projects.$inferSelect;
+
+export const stepArtifacts = sqliteTable(
+  'step_artifacts',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    stepId: text('step_id').notNull(),
+    kind: text('kind').notNull(),
+    contentPath: text('content_path').notNull(),
+    contentHash: text('content_hash').notNull(),
+    byteSize: integer('byte_size').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    index('step_artifacts_project_step_idx').on(table.projectId, table.stepId),
+    index('step_artifacts_content_hash_idx').on(table.contentHash),
+  ],
+);
+
+export type StepArtifactRecord = typeof stepArtifacts.$inferSelect;
