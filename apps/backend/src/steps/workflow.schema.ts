@@ -73,12 +73,54 @@ export const workflowStepSchema = z.discriminatedUnion('type', [
   }),
 ]);
 
+export const editableWorkflowStepSchema = z.discriminatedUnion('type', [
+  z.object({ id: stepIdSchema, type: z.literal('goto'), url: z.string().max(10_000) }),
+  z.object({
+    id: stepIdSchema,
+    type: z.literal('gotoIfUrlMissing'),
+    urlFragment: z.string().max(10_000),
+    url: z.string().max(10_000),
+  }),
+  z.object({
+    id: stepIdSchema,
+    type: z.literal('waitFor'),
+    selector: z.string().max(20_000),
+    timeoutMs: z.number().int().min(250).max(300_000),
+    label: z.string().max(1_000),
+  }),
+  z.object({
+    id: stepIdSchema,
+    type: z.literal('waitUntilHidden'),
+    selector: z.string().max(20_000),
+    pollMs: z.number().int().min(250).max(60_000),
+    label: z.string().max(1_000),
+  }),
+  z.object({
+    id: stepIdSchema,
+    type: z.literal('act'),
+    instruction: z.string().max(10_000),
+    scopeSelector: z.string().max(20_000).optional(),
+    label: z.string().max(1_000),
+  }),
+  z.object({
+    id: stepIdSchema,
+    type: z.literal('extractText'),
+    selector: z.string().max(20_000),
+    timeoutMs: z.number().int().min(250).max(300_000),
+    label: z.string().max(1_000),
+  }),
+]);
+
 export const plannedWorkflowSchema = z.object({
   steps: z.array(plannedWorkflowStepSchema).min(1),
 });
 
 export const workflowSchema = z.object({
   steps: z.array(workflowStepSchema).min(1),
+});
+
+export const editableWorkflowSchema = z.object({
+  steps: z.array(editableWorkflowStepSchema).min(1),
 });
 
 export type Workflow = z.infer<typeof workflowSchema>;

@@ -8,6 +8,8 @@ import {
   loadStepArtifact,
 } from '../artifacts/artifact.service.js';
 import { serializeArtifact } from '../artifacts/artifact.serializer.js';
+import { findLocatorOptions, supportsLocatorSelection } from '../artifacts/locator-finder.js';
+import { editableWorkflowStepSchema } from '../steps/workflow.schema.js';
 
 const artifactParamsSchema = z.object({
   projectId: z.uuid(),
@@ -17,6 +19,10 @@ const artifactIdSchema = z.uuid();
 const createArtifactSchema = z.object({
   kind: z.enum(['dom', 'html']),
   content: z.string().min(1).max(10_000_000),
+});
+const locatorOptionsSchema = z.object({
+  artifactId: z.uuid(),
+  operation: editableWorkflowStepSchema,
 });
 
 export const stepArtifactsRouter = Router();
@@ -115,4 +121,55 @@ stepArtifactsRouter.delete('/:projectId/steps/:stepId/artifacts/:artifactId', as
     return;
   }
   response.status(204).send();
+});
+
+stepArtifactsRouter.post('/:projectId/steps/:stepId/locator-options', async (request, response) => {
+  const scope = validateScope(request);
+  const body = locatorOptionsSchema.safeParse(request.body);
+  if (!scope.success || !body.success) {
+    response.status(400).json({ error: 'Invalid locator-options request' });
+    return;
+  }
+
+  const project = loadProject(scope.data.projectId);
+  if (!project) {
+    response.status(404).json({ error: 'Project not found' });
+    return;
+  }
+
+  const savedStep = project.steps?.steps.find(({ id }) => id === scope.data.stepId);
+  if (!savedStep) {
+    response.status(404).json({ error: 'Step not found' });
+    return;
+  }
+
+  const step = body.data.operation;
+  if (step.id !== scope.data.stepId) {
+    response.status(400).json({ error: 'Operation id does not match the selected step' });
+    return;
+  }
+
+  if (!supportsLocatorSelection(step)) {
+    response.status(400).json({ error: `${step.type} steps do not target a DOM element` });
+    return;
+  }
+
+  try {
+    const artifact = await loadStepArtifact(
+      scope.data.projectId,
+      scope.data.stepId,
+      body.data.artifactId,
+    );
+    if (!artifact) {
+      response.status(404).json({ error: 'Artifact not found' });
+      return;
+    }
+
+    response.json(await findLocatorOptions(step, artifact.kind, artifact.content));
+  } catch (error) {
+    console.error('Could not find locator options', error);
+    response.status(502).json({
+      error: error instanceof Error ? error.message : 'Could not find locator options',
+    });
+  }
 });

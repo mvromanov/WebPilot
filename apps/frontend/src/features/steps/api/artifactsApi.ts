@@ -1,5 +1,6 @@
 import { ApiError } from '../../projects/api/projectsApi';
-import type { StepArtifact, StepArtifactKind, StepArtifactWithContent } from '../types/artifacts';
+import type { LocatorOption, StepArtifact, StepArtifactKind, StepArtifactWithContent } from '../types/artifacts';
+import type { WorkflowStep } from '../types';
 
 type ApiResponse<T> = { data: T };
 
@@ -50,4 +51,19 @@ export async function deleteStepArtifact(
 ): Promise<void> {
   const response = await fetch(`${artifactsUrl(projectId, stepId)}/${artifactId}`, { method: 'DELETE' });
   if (!response.ok) throw await readError(response, 'Could not delete step artifact');
+}
+
+export async function findLocatorOptions(
+  projectId: string,
+  stepId: string,
+  artifactId: string,
+  operation: WorkflowStep,
+): Promise<LocatorOption[]> {
+  const response = await fetch(`/api/projects/${projectId}/steps/${stepId}/locator-options`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ artifactId, operation }),
+  });
+  if (!response.ok) throw await readError(response, 'Could not find locator options');
+  return ((await response.json()) as { options: LocatorOption[] }).options;
 }

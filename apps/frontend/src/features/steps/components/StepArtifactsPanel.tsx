@@ -2,15 +2,18 @@ import { useState, type SyntheticEvent } from 'react';
 import {
   createStepArtifact,
   deleteStepArtifact,
+  findLocatorOptions,
   listStepArtifacts,
   loadStepArtifact,
 } from '../api/artifactsApi';
-import type { StepArtifact, StepArtifactKind } from '../types/artifacts';
+import type { LocatorOption, StepArtifact, StepArtifactKind } from '../types/artifacts';
+import type { WorkflowStep } from '../types';
 import './StepArtifactsPanel.css';
 
 type Props = {
   projectId: string;
-  stepId: string;
+  step: WorkflowStep;
+  onEnsureSaved: () => Promise<boolean>;
 };
 
 function formatBytes(bytes: number) {
@@ -19,16 +22,20 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function StepArtifactsPanel({ projectId, stepId }: Props) {
+export function StepArtifactsPanel({ projectId, step, onEnsureSaved }: Props) {
+  const stepId = step.id;
   const [artifacts, setArtifacts] = useState<StepArtifact[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [locatingId, setLocatingId] = useState<string | null>(null);
   const [kind, setKind] = useState<StepArtifactKind>('dom');
   const [content, setContent] = useState('');
   const [preview, setPreview] = useState<{ id: string; content: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [locatorResults, setLocatorResults] = useState<Record<string, LocatorOption[]>>({});
+  const supportsLocators = step.type !== 'goto' && step.type !== 'gotoIfUrlMissing';
 
   const fetchArtifacts = async () => {
     setIsLoading(true);
@@ -52,6 +59,10 @@ export function StepArtifactsPanel({ projectId, stepId }: Props) {
     setIsAdding(true);
     setError(null);
     try {
+      if (!await onEnsureSaved()) {
+        setError('Save the project before adding this artifact.');
+        return;
+      }
       const artifact = await createStepArtifact(projectId, stepId, kind, content);
       setArtifacts((current) => [artifact, ...current]);
       setContent('');
@@ -85,10 +96,28 @@ export function StepArtifactsPanel({ projectId, stepId }: Props) {
       await deleteStepArtifact(projectId, stepId, artifact.id);
       setArtifacts((current) => current.filter(({ id }) => id !== artifact.id));
       if (preview?.id === artifact.id) setPreview(null);
+      setLocatorResults((current) => {
+        const next = { ...current };
+        delete next[artifact.id];
+        return next;
+      });
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Could not delete artifact');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleFindLocators = async (artifact: StepArtifact) => {
+    setLocatingId(artifact.id);
+    setError(null);
+    try {
+      const options = await findLocatorOptions(projectId, stepId, artifact.id, step);
+      setLocatorResults((current) => ({ ...current, [artifact.id]: options }));
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Could not find locator options');
+    } finally {
+      setLocatingId(null);
     }
   };
 
@@ -141,10 +170,39 @@ export function StepArtifactsPanel({ projectId, stepId }: Props) {
                   <code title={artifact.contentHash}>{artifact.contentHash.slice(0, 12)}…</code>
                 </div>
                 <div className="artifact-actions">
+                  <button
+                    type="button"
+                    disabled={!supportsLocators || locatingId === artifact.id}
+                    title={supportsLocators ? 'Find stable locator options' : `${step.type} does not target a DOM element`}
+                    onClick={() => void handleFindLocators(artifact)}
+                  >
+                    {locatingId === artifact.id ? 'Finding…' : 'Find Locator'}
+                  </button>
                   <button type="button" onClick={() => void handlePreview(artifact)}>{preview?.id === artifact.id ? 'Hide' : 'View'}</button>
                   <button type="button" className="artifact-delete" disabled={deletingId === artifact.id} onClick={() => void handleDelete(artifact)}>{deletingId === artifact.id ? 'Deleting…' : 'Delete'}</button>
                 </div>
                 {preview?.id === artifact.id && <textarea readOnly rows={10} value={preview.content} />}
+                {locatorResults[artifact.id] && (
+                  <div className="locator-results">
+                    <div className="locator-results-heading">
+                      <strong>Ranked locator options</strong>
+                      <span>Most stable first</span>
+                    </div>
+                    {locatorResults[artifact.id].map((option) => (
+                      <section className="locator-option" key={`${option.rank}-${option.locator}`}>
+                        <div className="locator-rank">#{option.rank}</div>
+                        <div className="locator-option-content">
+                          <code>{option.locator}</code>
+                          <p><strong>Targets:</strong> {option.targets}</p>
+                          <p>{option.whyUseIt}</p>
+                        </div>
+                        <div className="stability-score" title="Stability score">
+                          <strong>{option.stabilityScore}</strong><span>/100</span>
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                )}
               </article>
             ))}
           </div>

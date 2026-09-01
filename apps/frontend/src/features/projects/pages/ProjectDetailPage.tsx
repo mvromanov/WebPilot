@@ -86,7 +86,7 @@ export function ProjectDetailPage() {
   };
 
   const handleSave = async () => {
-    if (!project || !originalPrompt.trim()) return;
+    if (!project || !originalPrompt.trim()) return false;
     setIsSaving(true);
     setError(null);
     setSaveMessage(null);
@@ -98,8 +98,10 @@ export function ProjectDetailPage() {
       setOriginalPrompt(updatedProject.originalPrompt);
       setGeneratedJson(updatedProject.steps ? JSON.stringify(updatedProject.steps, null, 2) : '');
       setSaveMessage('Saved');
+      return true;
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Could not save project');
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -157,6 +159,14 @@ export function ProjectDetailPage() {
       <div className="detail-heading">
         <div><p className="section-label">Project</p><h1>{project.name}</h1></div>
         <div className="detail-actions">
+          <button className="primary-button" type="button" disabled={isExecuting || !generatedJson} onClick={handleExecute}>
+            {isExecuting ? 'Executing…' : 'Execute'}
+          </button>
+          {isExecuting && (
+            <button className="danger-button" type="button" disabled={isStopping} onClick={handleStop}>
+              {isStopping ? 'Stopping…' : 'Stop'}
+            </button>
+          )}
           <button className="secondary-button" type="button" disabled={isSaving || !originalPrompt.trim()} onClick={handleSave}>{isSaving ? 'Saving…' : 'Save'}</button>
           <button className="danger-button" type="button" disabled={isDeleting} onClick={handleDelete}>{isDeleting ? 'Deleting…' : 'Delete project'}</button>
         </div>
@@ -194,21 +204,12 @@ export function ProjectDetailPage() {
         <WorkflowStepsEditor
           projectId={project.id}
           workflow={visualWorkflow}
+          onEnsureSaved={handleSave}
           onChange={(workflow) => {
             setGeneratedJson(JSON.stringify(workflow, null, 2));
             setSaveMessage(null);
           }}
         />
-        <div className="workflow-actions">
-          <button className="primary-button" type="button" disabled={isExecuting || !generatedJson} onClick={handleExecute}>
-            {isExecuting ? 'Executing…' : 'Execute'}
-          </button>
-          {isExecuting && (
-            <button className="danger-button" type="button" disabled={isStopping} onClick={handleStop}>
-              {isStopping ? 'Stopping…' : 'Stop'}
-            </button>
-          )}
-        </div>
         {executionError && <p className="form-error" role="alert">{executionError}</p>}
         {executionResult && (
           <div className="execution-result" role="status">

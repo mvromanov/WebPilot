@@ -13,3 +13,11 @@ export type StepArtifact = {
 export type StepArtifactWithContent = StepArtifact & {
   content: string;
 };
+
+export type LocatorOption = {
+  rank: number;
+  locator: string;
+  targets: string;
+  whyUseIt: string;
+  stabilityScore: number;
+};

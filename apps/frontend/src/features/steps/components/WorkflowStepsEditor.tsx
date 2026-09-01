@@ -6,6 +6,7 @@ type Props = {
   projectId: string;
   workflow: Workflow | null;
   onChange: (workflow: Workflow) => void;
+  onEnsureSaved: () => Promise<boolean>;
 };
 
 const stepTypes: WorkflowStep['type'][] = [
@@ -145,7 +146,7 @@ function StepFields({ step, onChange }: { step: WorkflowStep; onChange: (step: W
   }
 }
 
-export function WorkflowStepsEditor({ projectId, workflow, onChange }: Props) {
+export function WorkflowStepsEditor({ projectId, workflow, onChange, onEnsureSaved }: Props) {
   const updateStep = (index: number, step: WorkflowStep) => {
     if (!workflow) return;
     const steps = workflow.steps.map((current, currentIndex) => currentIndex === index ? step : current);
@@ -198,7 +199,7 @@ export function WorkflowStepsEditor({ projectId, workflow, onChange }: Props) {
                 <div className="step-fields">
                   <StepFields step={step} onChange={(updatedStep) => updateStep(index, updatedStep)} />
                 </div>
-                <StepArtifactsPanel projectId={projectId} stepId={step.id} />
+                <StepArtifactsPanel projectId={projectId} step={step} onEnsureSaved={onEnsureSaved} />
               </section>
             ))}
           </div>

@@ -58,6 +58,7 @@ DOM/HTML should be stored as a compressed file rather than embedded in `steps_js
 - `POST /api/projects/:projectId/steps/:stepId/artifacts` — store compressed DOM/HTML
 - `GET /api/projects/:projectId/steps/:stepId/artifacts/:artifactId` — fetch metadata and content
 - `DELETE /api/projects/:projectId/steps/:stepId/artifacts/:artifactId` — delete an artifact
+- `POST /api/projects/:projectId/steps/:stepId/locator-options` — rank locator options from an artifact
 
 Create requests accept JSON with a required `name`, required `originalPrompt`,
 and optional `description`:

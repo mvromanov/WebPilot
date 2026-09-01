@@ -22,6 +22,20 @@
 .artifact-actions { display: flex; gap: 4px; }
 .artifact-actions button { padding: 4px 6px; border: 0; border-radius: 4px; color: #6258c8; background: transparent; font-size: 9px; font-weight: 700; cursor: pointer; }
 .artifact-actions button:hover { background: #eeecff; }
+.artifact-actions button:disabled { color: #b6bac2; cursor: not-allowed; }
 .artifact-actions .artifact-delete { color: #ae4852; }
 .artifact-item textarea { grid-column: 1 / -1; margin-top: 3px; }
+.locator-results { display: grid; grid-column: 1 / -1; gap: 8px; margin-top: 5px; padding-top: 12px; border-top: 1px solid #e8e9ec; }
+.locator-results-heading { display: flex; align-items: center; justify-content: space-between; color: #858b95; }
+.locator-results-heading strong { color: #464b55; font-size: 10px; }
+.locator-results-heading span { font-size: 9px; }
+.locator-option { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; padding: 11px; border: 1px solid #e2e0f5; border-radius: 7px; background: #faf9ff; }
+.locator-rank { display: grid; width: 27px; height: 27px; place-items: center; border-radius: 7px; color: #564bd0; background: #e9e7ff; font-size: 10px; font-weight: 800; }
+.locator-option-content { min-width: 0; }
+.locator-option-content > code { display: block; padding: 6px 8px; overflow: auto; border-radius: 5px; color: #423b93; background: #eeecff; font-size: 10px; white-space: nowrap; }
+.locator-option-content p { margin: 7px 0 0; color: #747a85; font-size: 9px; line-height: 1.5; }
+.locator-option-content p strong { color: #555b65; font-size: inherit; }
+.stability-score { min-width: 42px; color: #25815f; text-align: right; }
+.stability-score strong { color: inherit; font-size: 14px; }
+.stability-score span { color: #8da59b; font-size: 8px; }
 @media (max-width: 700px) { .artifact-item { grid-template-columns: 1fr; } .artifact-actions { justify-content: flex-end; } }
