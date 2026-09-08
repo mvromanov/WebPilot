@@ -1,4 +1,4 @@
-import { ApiError } from '../../projects/api/projectsApi';
+import { readApiError } from '../../projects/api/projectsApi';
 import type { Workflow } from '../types';
 
 export async function generateSteps(originalPrompt: string): Promise<Workflow> {
@@ -9,8 +9,7 @@ export async function generateSteps(originalPrompt: string): Promise<Workflow> {
   });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => null) as { error?: string } | null;
-    throw new ApiError(body?.error ?? 'Could not generate workflow steps', response.status);
+    throw await readApiError(response, 'Could not generate workflow steps');
   }
 
   return response.json() as Promise<Workflow>;
@@ -24,8 +23,7 @@ export async function executeSteps(projectId: string, workflow: Workflow): Promi
   });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => null) as { error?: string } | null;
-    throw new ApiError(body?.error ?? 'Could not execute workflow steps', response.status);
+    throw await readApiError(response, 'Could not execute workflow steps');
   }
 
   const body = await response.json() as { result: unknown };
@@ -36,7 +34,6 @@ export async function stopSteps(projectId: string): Promise<void> {
   const response = await fetch(`/api/steps/stop/${projectId}`, { method: 'POST' });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => null) as { error?: string } | null;
-    throw new ApiError(body?.error ?? 'Could not stop browser session', response.status);
+    throw await readApiError(response, 'Could not stop browser session');
   }
 }

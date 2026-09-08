@@ -5,6 +5,7 @@ import { executeSteps, generateSteps, stopSteps } from '../../steps/api/stepsApi
 import type { Workflow } from '../../steps/types';
 import { WorkflowStepsEditor } from '../../steps/components/WorkflowStepsEditor';
 import type { Project } from '../types';
+import { ApiErrorMessage } from '../components/ApiErrorMessage';
 import './ProjectDetailPage.css';
 
 function formatDate(value: string) {
@@ -15,18 +16,18 @@ export function ProjectDetailPage() {
   const { projectId = '' } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
-  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generationError, setGenerationError] = useState<Error | string | null>(null);
   const [generatedJson, setGeneratedJson] = useState('');
   const [originalPrompt, setOriginalPrompt] = useState('');
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [executionError, setExecutionError] = useState<string | null>(null);
+  const [executionError, setExecutionError] = useState<Error | string | null>(null);
   const [executionResult, setExecutionResult] = useState<unknown>(null);
   const stopRequestedRef = useRef(false);
 
@@ -56,7 +57,7 @@ export function ProjectDetailPage() {
       })
       .catch((caughtError: unknown) => {
         if (caughtError instanceof DOMException && caughtError.name === 'AbortError') return;
-        setError(caughtError instanceof Error ? caughtError.message : 'Could not load project');
+        setError(caughtError instanceof Error ? caughtError : 'Could not load project');
       })
       .finally(() => {
         if (!controller.signal.aborted) setIsLoading(false);
@@ -72,7 +73,7 @@ export function ProjectDetailPage() {
       await deleteProject(project.id);
       navigate('/');
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Could not delete project');
+      setError(caughtError instanceof Error ? caughtError : 'Could not delete project');
       setIsDeleting(false);
     }
   };
@@ -86,7 +87,7 @@ export function ProjectDetailPage() {
       const workflow = await generateSteps(originalPrompt);
       setGeneratedJson(JSON.stringify(workflow, null, 2));
     } catch (caughtError) {
-      setGenerationError(caughtError instanceof Error ? caughtError.message : 'Could not generate workflow steps');
+      setGenerationError(caughtError instanceof Error ? caughtError : 'Could not generate workflow steps');
     } finally {
       setIsGenerating(false);
     }
@@ -107,7 +108,7 @@ export function ProjectDetailPage() {
       setSaveMessage('Saved');
       return true;
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Could not save project');
+      setError(caughtError instanceof Error ? caughtError : 'Could not save project');
       return false;
     } finally {
       setIsSaving(false);
@@ -125,7 +126,7 @@ export function ProjectDetailPage() {
       setExecutionResult(await executeSteps(project.id, parsedWorkflow.workflow));
     } catch (caughtError) {
       if (stopRequestedRef.current) return;
-      setExecutionError(caughtError instanceof Error ? caughtError.message : 'Could not execute workflow steps');
+      setExecutionError(caughtError instanceof Error ? caughtError : 'Could not execute workflow steps');
     } finally {
       setIsExecuting(false);
     }
@@ -142,7 +143,7 @@ export function ProjectDetailPage() {
       setExecutionResult('Browser session stopped');
     } catch (caughtError) {
       stopRequestedRef.current = false;
-      setExecutionError(caughtError instanceof Error ? caughtError.message : 'Could not stop browser session');
+      setExecutionError(caughtError instanceof Error ? caughtError : 'Could not stop browser session');
     } finally {
       setIsStopping(false);
     }
@@ -152,7 +153,7 @@ export function ProjectDetailPage() {
   if (error && !project) {
     return (
       <div className="empty-state empty-state--error" role="alert">
-        <h1>Project unavailable</h1><p>{error}</p>
+        <h1>Project unavailable</h1><ApiErrorMessage error={error} />
         <Link className="secondary-button button-link" to="/">Back to projects</Link>
       </div>
     );
@@ -177,7 +178,7 @@ export function ProjectDetailPage() {
           <button className="danger-button" type="button" disabled={isDeleting} onClick={handleDelete}>{isDeleting ? 'Deleting…' : 'Delete project'}</button>
         </div>
       </div>
-      {error && <p className="form-error" role="alert">{error}</p>}
+      {error && <ApiErrorMessage error={error} />}
       {saveMessage && <p className="save-message" role="status">{saveMessage}</p>}
       <div className="detail-panel">
         <div><span>Description</span><p>{project.description || 'No description provided.'}</p></div>
@@ -197,7 +198,7 @@ export function ProjectDetailPage() {
             <button className="primary-button" type="button" disabled={isGenerating || !originalPrompt.trim()} onClick={handleGenerate}>{isGenerating ? 'Generating…' : 'Generate'}</button>
           </div>
         </div>
-        {generationError && <p className="form-error" role="alert">{generationError}</p>}
+        {generationError && <ApiErrorMessage error={generationError} />}
         <label className="generated-json-field">
           <span>Generated steps JSON <small>Saved with the project when you click Save</small></span>
           <textarea
@@ -222,7 +223,7 @@ export function ProjectDetailPage() {
             setSaveMessage(null);
           }}
         />
-        {executionError && <p className="form-error" role="alert">{executionError}</p>}
+        {executionError && <ApiErrorMessage error={executionError} />}
         {executionResult !== null && (
           <div className="execution-result" role="status">
             <span>Execution result</span>

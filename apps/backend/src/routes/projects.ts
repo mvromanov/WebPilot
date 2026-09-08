@@ -8,6 +8,7 @@ import {
 } from '../projects/project.repository.js';
 import { createProjectSchema, projectIdSchema, updateProjectSchema } from '../projects/project.schemas.js';
 import { serializeProject } from '../projects/project.serializer.js';
+import { formatFieldErrors } from './validation-errors.js';
 
 export const projectsRouter = Router();
 
@@ -21,7 +22,7 @@ projectsRouter.post('/', (request, response) => {
   if (!parsedBody.success) {
     response.status(400).json({
       error: 'Invalid project',
-      details: parsedBody.error.flatten().fieldErrors,
+      details: { fieldErrors: formatFieldErrors(parsedBody.error) },
     });
     return;
   }
@@ -63,7 +64,7 @@ projectsRouter.patch('/:id', (request, response) => {
   if (!parsedBody.success) {
     response.status(400).json({
       error: 'Invalid project update',
-      details: parsedBody.error.flatten().fieldErrors,
+      details: { fieldErrors: formatFieldErrors(parsedBody.error) },
     });
     return;
   }

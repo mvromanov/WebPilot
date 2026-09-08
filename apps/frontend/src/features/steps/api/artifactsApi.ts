@@ -1,12 +1,11 @@
-import { ApiError } from '../../projects/api/projectsApi';
+import { readApiError } from '../../projects/api/projectsApi';
 import type { ExtractionInstructionSuggestion, LocatorOption, StepArtifact, StepArtifactKind, StepArtifactWithContent } from '../types/artifacts';
 import type { WorkflowStep } from '../types';
 
 type ApiResponse<T> = { data: T };
 
 async function readError(response: Response, fallback: string) {
-  const body = await response.json().catch(() => null) as { error?: string } | null;
-  return new ApiError(body?.error ?? fallback, response.status);
+  return readApiError(response, fallback);
 }
 
 function artifactsUrl(projectId: string, stepId: string) {

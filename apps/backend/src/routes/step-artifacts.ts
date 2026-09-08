@@ -84,7 +84,10 @@ stepArtifactsRouter.post('/:projectId/steps/:stepId/artifacts', async (request, 
       .json({ data: serializeArtifact(artifact) });
   } catch (error) {
     console.error('Could not create step artifact', error);
-    response.status(500).json({ error: 'Could not create step artifact' });
+    response.status(500).json({
+      error: 'Could not create step artifact',
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 });
 
@@ -105,7 +108,10 @@ stepArtifactsRouter.get('/:projectId/steps/:stepId/artifacts/:artifactId', async
     response.json({ data: { ...serializeArtifact(artifact), content: artifact.content } });
   } catch (error) {
     console.error('Could not read step artifact', error);
-    response.status(500).json({ error: 'Could not read step artifact' });
+    response.status(500).json({
+      error: 'Could not read step artifact',
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 });
 
@@ -170,7 +176,8 @@ stepArtifactsRouter.post('/:projectId/steps/:stepId/locator-options', async (req
   } catch (error) {
     console.error('Could not find locator options', error);
     response.status(502).json({
-      error: error instanceof Error ? error.message : 'Could not find locator options',
+      error: 'Could not find locator options',
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 });
@@ -213,7 +220,8 @@ stepArtifactsRouter.post('/:projectId/steps/:stepId/extraction-instruction', asy
   } catch (error) {
     console.error('Could not find extraction instruction', error);
     response.status(502).json({
-      error: error instanceof Error ? error.message : 'Could not find extraction instruction',
+      error: 'Could not find extraction instruction',
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 });

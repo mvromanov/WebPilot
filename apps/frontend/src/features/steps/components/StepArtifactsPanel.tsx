@@ -9,6 +9,7 @@ import {
 } from '../api/artifactsApi';
 import type { ExtractionInstructionSuggestion, LocatorOption, StepArtifact, StepArtifactKind } from '../types/artifacts';
 import type { WorkflowStep } from '../types';
+import { ApiErrorMessage } from '../../projects/components/ApiErrorMessage';
 import './StepArtifactsPanel.css';
 
 type Props = {
@@ -36,7 +37,7 @@ export function StepArtifactsPanel({ projectId, step, onEnsureSaved, onStepChang
   const [kind, setKind] = useState<StepArtifactKind>('dom');
   const [content, setContent] = useState('');
   const [preview, setPreview] = useState<{ id: string; content: string } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | string | null>(null);
   const [locatorResults, setLocatorResults] = useState<Record<string, LocatorOption[]>>({});
   const [instructionSuggestions, setInstructionSuggestions] = useState<Record<string, ExtractionInstructionSuggestion[]>>({});
   const supportsLocators = step.type !== 'goto' && step.type !== 'gotoIfUrlMissing';
@@ -48,7 +49,7 @@ export function StepArtifactsPanel({ projectId, step, onEnsureSaved, onStepChang
       setArtifacts(await listStepArtifacts(projectId, stepId));
       setHasLoaded(true);
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Could not load artifacts');
+      setError(caughtError instanceof Error ? caughtError : 'Could not load artifacts');
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +73,7 @@ export function StepArtifactsPanel({ projectId, step, onEnsureSaved, onStepChang
       setContent('');
       setHasLoaded(true);
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Could not add artifact');
+      setError(caughtError instanceof Error ? caughtError : 'Could not add artifact');
     } finally {
       setIsAdding(false);
     }
@@ -88,7 +89,7 @@ export function StepArtifactsPanel({ projectId, step, onEnsureSaved, onStepChang
       const loaded = await loadStepArtifact(projectId, stepId, artifact.id);
       setPreview({ id: artifact.id, content: loaded.content });
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Could not fetch artifact');
+      setError(caughtError instanceof Error ? caughtError : 'Could not fetch artifact');
     }
   };
 
@@ -111,7 +112,7 @@ export function StepArtifactsPanel({ projectId, step, onEnsureSaved, onStepChang
         return next;
       });
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Could not delete artifact');
+      setError(caughtError instanceof Error ? caughtError : 'Could not delete artifact');
     } finally {
       setDeletingId(null);
     }
@@ -124,7 +125,7 @@ export function StepArtifactsPanel({ projectId, step, onEnsureSaved, onStepChang
       const options = await findLocatorOptions(projectId, stepId, artifact.id, step);
       setLocatorResults((current) => ({ ...current, [artifact.id]: options }));
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Could not find locator options');
+      setError(caughtError instanceof Error ? caughtError : 'Could not find locator options');
     } finally {
       setLocatingId(null);
     }
@@ -137,7 +138,7 @@ export function StepArtifactsPanel({ projectId, step, onEnsureSaved, onStepChang
       const suggestions = await findExtractionInstruction(projectId, stepId, artifact.id, step);
       setInstructionSuggestions((current) => ({ ...current, [artifact.id]: suggestions }));
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Could not find an extraction instruction');
+      setError(caughtError instanceof Error ? caughtError : 'Could not find an extraction instruction');
     } finally {
       setFindingInstructionId(null);
     }
@@ -190,7 +191,7 @@ export function StepArtifactsPanel({ projectId, step, onEnsureSaved, onStepChang
           </div>
         )}
 
-        {error && <p className="artifact-error" role="alert">{error}</p>}
+        {error && <ApiErrorMessage error={error} className="artifact-error" />}
         {isLoading ? (
           <p className="artifact-empty">Loading artifacts…</p>
         ) : artifacts.length === 0 ? (

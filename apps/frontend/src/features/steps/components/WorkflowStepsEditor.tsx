@@ -36,7 +36,6 @@ function createStep(type: WorkflowStep['type'] = 'goto'): WorkflowStep {
         id,
         type,
         instruction: '',
-        sampleText: '',
         resultType: 'text',
         resultShape: 'single',
         selector: '',
@@ -84,7 +83,7 @@ function changeStepType(step: WorkflowStep, type: WorkflowStep['type']): Workflo
         id: step.id,
         type,
         instruction: step.type === 'extractText' ? step.instruction : '',
-        sampleText: step.type === 'extractText' ? step.sampleText : '',
+        ...(step.type === 'extractText' && step.sampleText ? { sampleText: step.sampleText } : {}),
         resultType: step.type === 'extractText' ? step.resultType : 'text',
         resultShape: step.type === 'extractText' ? step.resultShape : 'single',
         selector,
@@ -139,6 +138,12 @@ function StepSelect({
 
 function StepFields({ step, onChange }: { step: WorkflowStep; onChange: (step: WorkflowStep) => void }) {
   const update = (field: string, value: string | number) => {
+    if (field === 'sampleText' && value === '') {
+      const updatedStep = { ...step } as WorkflowStep & { sampleText?: string };
+      delete updatedStep.sampleText;
+      onChange(updatedStep);
+      return;
+    }
     onChange({ ...step, [field]: value } as WorkflowStep);
   };
 

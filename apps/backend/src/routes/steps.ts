@@ -10,6 +10,7 @@ import {
 import { workflowSchema } from '../steps/workflow.schema.js';
 import { projectIdSchema } from '../projects/project.schemas.js';
 import { loadProject } from '../projects/project.repository.js';
+import { formatFieldErrors } from './validation-errors.js';
 
 const generateStepsSchema = z.object({
   originalPrompt: z.string().trim().min(1, 'Original prompt is required').max(50_000),
@@ -23,7 +24,7 @@ stepsRouter.post('/generate', async (request, response) => {
   if (!parsedBody.success) {
     response.status(400).json({
       error: 'Invalid generation request',
-      details: parsedBody.error.flatten().fieldErrors,
+      details: { fieldErrors: formatFieldErrors(parsedBody.error) },
     });
     return;
   }
@@ -33,7 +34,8 @@ stepsRouter.post('/generate', async (request, response) => {
   } catch (error) {
     console.error('Workflow generation failed', error);
     response.status(502).json({
-      error: error instanceof Error ? error.message : 'Workflow generation failed',
+      error: 'Workflow generation failed',
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 });
@@ -50,7 +52,7 @@ stepsRouter.post('/execute/:projectId', async (request, response) => {
   if (!parsedWorkflow.success) {
     response.status(400).json({
       error: 'Invalid workflow',
-      details: parsedWorkflow.error.flatten(),
+      details: { fieldErrors: formatFieldErrors(parsedWorkflow.error) },
     });
     return;
   }
@@ -70,7 +72,8 @@ stepsRouter.post('/execute/:projectId', async (request, response) => {
         ? 409
         : 500;
     response.status(status).json({
-      error: error instanceof Error ? error.message : 'Workflow execution failed',
+      error: 'Workflow execution failed',
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 });

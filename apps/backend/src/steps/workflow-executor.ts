@@ -67,23 +67,37 @@ export async function executeWorkflowSteps(
           schema: unknown,
           options: unknown,
         ) => Promise<{ data: unknown }>;
+        const scopeLocator = step.selector ? page.locator(step.selector) : undefined;
         const options = {
           page,
           timeout: step.timeoutMs,
-          ...(step.selector ? { locator: page.locator(step.selector) } : {}),
+          ...(scopeLocator ? { locator: scopeLocator } : {}),
         };
-        if (step.resultType === 'text' && step.resultShape === 'single') {
-          result = (await extract(step.instruction, z.string(), options)).data;
-        } else if (step.resultType === 'text') {
-          result = (await extract(step.instruction, z.array(z.string()), options)).data;
-        } else if (step.resultType === 'url' && step.resultShape === 'single') {
-          result = (await extract(step.instruction, z.string().url(), options)).data;
-        } else if (step.resultType === 'url') {
-          result = (await extract(step.instruction, z.array(z.string().url()), options)).data;
-        } else if (step.resultShape === 'single') {
-          result = (await extract(step.instruction, flatJsonObjectSchema, options)).data;
+
+        const itemSchema = step.resultType === 'text'
+          ? z.string()
+          : step.resultType === 'url'
+            ? z.string().url()
+            : flatJsonObjectSchema;
+
+        if (step.resultShape === 'single') {
+          result = (await extract(step.instruction, itemSchema, options)).data;
         } else {
-          result = (await extract(step.instruction, z.array(flatJsonObjectSchema), options)).data;
+          const matchCount = scopeLocator ? await scopeLocator.count() : 0;
+          if (scopeLocator && matchCount > 1) {
+            const items: unknown[] = [];
+            for (let index = 0; index < matchCount; index += 1) {
+              const item = await extract(step.instruction, itemSchema, {
+                page,
+                timeout: step.timeoutMs,
+                locator: scopeLocator.nth(index),
+              });
+              items.push(item.data);
+            }
+            result = items;
+          } else {
+            result = (await extract(step.instruction, z.array(itemSchema), options)).data;
+          }
         }
         hasResult = true;
         break;

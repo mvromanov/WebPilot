@@ -2,17 +2,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createProject, deleteProject, listProjects } from '../api/projectsApi';
 import { CreateProjectDialog } from '../components/CreateProjectDialog';
 import { ProjectCard } from '../components/ProjectCard';
+import { ApiErrorMessage } from '../components/ApiErrorMessage';
 import type { CreateProjectInput, Project } from '../types';
 import './ProjectsPage.css';
 
 export function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<Error | string | null>(null);
   const [query, setQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<Error | string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchProjects = useCallback(async (signal?: AbortSignal) => {
@@ -22,7 +23,7 @@ export function ProjectsPage() {
       setProjects(await listProjects(signal));
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
-      setLoadError(error instanceof Error ? error.message : 'Could not load projects');
+      setLoadError(error instanceof Error ? error : 'Could not load projects');
     } finally {
       if (!signal?.aborted) setIsLoading(false);
     }
@@ -51,7 +52,7 @@ export function ProjectsPage() {
       setProjects((current) => [project, ...current]);
       setIsCreateOpen(false);
     } catch (error) {
-      setCreateError(error instanceof Error ? error.message : 'Could not create project');
+      setCreateError(error instanceof Error ? error : 'Could not create project');
     } finally {
       setIsCreating(false);
     }
@@ -64,7 +65,7 @@ export function ProjectsPage() {
       await deleteProject(project.id);
       setProjects((current) => current.filter(({ id }) => id !== project.id));
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Could not delete project');
+      setLoadError(error instanceof Error ? error : 'Could not delete project');
     } finally {
       setDeletingId(null);
     }
@@ -103,7 +104,7 @@ export function ProjectsPage() {
       {loadError ? (
         <div className="empty-state empty-state--error" role="alert">
           <h2>Could not load projects</h2>
-          <p>{loadError}</p>
+          <ApiErrorMessage error={loadError} />
           <button className="secondary-button" type="button" onClick={() => void fetchProjects()}>Try again</button>
         </div>
       ) : isLoading ? (

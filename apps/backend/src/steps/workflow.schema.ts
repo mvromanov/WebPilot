@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+const optionalSampleTextSchema = z.preprocess(
+  (value) => typeof value === 'string' && value.trim() === '' ? undefined : value,
+  z.string().min(1).optional(),
+);
+
 const plannedWorkflowStepSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('goto'), url: z.url() }),
   z.object({
@@ -72,7 +77,7 @@ export const workflowStepSchema = z.discriminatedUnion('type', [
     id: stepIdSchema,
     type: z.literal('extractText'),
     instruction: z.string().min(1),
-    sampleText: z.string().min(1).optional(),
+    sampleText: optionalSampleTextSchema,
     resultType: z.enum(['text', 'url', 'json']),
     resultShape: z.enum(['single', 'array']),
     selector: z.string().min(1).optional(),

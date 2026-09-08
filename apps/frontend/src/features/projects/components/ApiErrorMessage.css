@@ -1,0 +1,4 @@
+.api-error > p { margin: 0; color: #b42332; }
+.api-error details { margin-top: 8px; color: #5d626c; }
+.api-error summary { width: fit-content; cursor: pointer; font-weight: 650; }
+.api-error pre { margin: 8px 0 0; padding: 12px; overflow: auto; border: 1px solid #e5c9cc; border-radius: 8px; color: #6f343b; background: #fff7f7; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; line-height: 1.5; white-space: pre-wrap; }

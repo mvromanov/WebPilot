@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import type { CreateProjectInput } from '../types';
+import { ApiErrorMessage } from './ApiErrorMessage';
 
 type Props = {
   isOpen: boolean;
   isSubmitting: boolean;
-  error: string | null;
+  error: Error | string | null;
   onClose: () => void;
   onSubmit: (input: CreateProjectInput) => Promise<void>;
 };
@@ -41,7 +42,7 @@ export function CreateProjectDialog({ isOpen, isSubmitting, error, onClose, onSu
             <span>Original prompt</span>
             <textarea required maxLength={50000} rows={6} value={originalPrompt} onChange={(event) => setOriginalPrompt(event.target.value)} placeholder="Paste the prompt that defines this project…" />
           </label>
-          {error && <p className="form-error" role="alert">{error}</p>}
+          {error && <ApiErrorMessage error={error} />}
           <div className="dialog-actions">
             <button type="button" className="secondary-button" onClick={onClose}>Cancel</button>
             <button type="submit" className="primary-button" disabled={isSubmitting || !name.trim() || !originalPrompt.trim()}>{isSubmitting ? 'Creating…' : 'Create project'}</button>

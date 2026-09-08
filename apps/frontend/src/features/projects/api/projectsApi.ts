@@ -1,23 +1,27 @@
 import type { CreateProjectInput, Project, UpdateProjectInput } from '../types';
 
 type ApiResponse<T> = { data: T };
-type ApiErrorResponse = { error?: string };
+type ApiErrorResponse = { error?: string; details?: unknown };
 
 export class ApiError extends Error {
-  constructor(message: string, public readonly status: number) {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly details?: unknown,
+  ) {
     super(message);
     this.name = 'ApiError';
   }
 }
 
-async function readError(response: Response, fallback: string) {
+export async function readApiError(response: Response, fallback: string) {
   const body = await response.json().catch(() => null) as ApiErrorResponse | null;
-  return new ApiError(body?.error ?? fallback, response.status);
+  return new ApiError(body?.error ?? fallback, response.status, body?.details);
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, init);
-  if (!response.ok) throw await readError(response, 'Something went wrong');
+  if (!response.ok) throw await readApiError(response, 'Something went wrong');
   return response.json() as Promise<T>;
 }
 
@@ -47,5 +51,5 @@ export async function updateProject(id: string, input: UpdateProjectInput): Prom
 
 export async function deleteProject(id: string): Promise<void> {
   const response = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
-  if (!response.ok) throw await readError(response, 'Could not delete project');
+  if (!response.ok) throw await readApiError(response, 'Could not delete project');
 }
