@@ -21,3 +21,9 @@ export type LocatorOption = {
   whyUseIt: string;
   stabilityScore: number;
 };
+
+export type ExtractionInstructionSuggestion = {
+  rank: number;
+  instruction: string;
+  why: string;
+};

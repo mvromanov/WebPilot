@@ -32,13 +32,23 @@ function createStep(type: WorkflowStep['type'] = 'goto'): WorkflowStep {
     case 'act':
       return { id, type, instruction: '', label: 'Perform action' };
     case 'extractText':
-      return { id, type, selector: '', timeoutMs: 15_000, label: 'Extract text' };
+      return {
+        id,
+        type,
+        instruction: '',
+        sampleText: '',
+        resultType: 'text',
+        resultShape: 'single',
+        selector: '',
+        timeoutMs: 15_000,
+        label: 'Extract result',
+      };
   }
 }
 
 function changeStepType(step: WorkflowStep, type: WorkflowStep['type']): WorkflowStep {
   const url = 'url' in step ? step.url : '';
-  const selector = 'selector' in step ? step.selector : '';
+  const selector = 'selector' in step ? step.selector ?? '' : '';
   const label = 'label' in step ? step.label : '';
   const timeoutMs = 'timeoutMs' in step ? step.timeoutMs : 15_000;
 
@@ -70,7 +80,17 @@ function changeStepType(step: WorkflowStep, type: WorkflowStep['type']): Workflo
         label: label || 'Perform action',
       };
     case 'extractText':
-      return { id: step.id, type, selector, timeoutMs, label: label || 'Extract text' };
+      return {
+        id: step.id,
+        type,
+        instruction: step.type === 'extractText' ? step.instruction : '',
+        sampleText: step.type === 'extractText' ? step.sampleText : '',
+        resultType: step.type === 'extractText' ? step.resultType : 'text',
+        resultShape: step.type === 'extractText' ? step.resultShape : 'single',
+        selector,
+        timeoutMs,
+        label: label || 'Extract result',
+      };
   }
 }
 
@@ -92,6 +112,27 @@ function StepField({ label, value, type = 'text', min, onChange }: FieldProps) {
         value={value}
         onChange={(event) => onChange(type === 'number' ? Number(event.target.value) : event.target.value)}
       />
+    </label>
+  );
+}
+
+function StepSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="step-field">
+      <span>{label}</span>
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
+        {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select>
     </label>
   );
 }
@@ -139,7 +180,25 @@ function StepFields({ step, onChange }: { step: WorkflowStep; onChange: (step: W
       return (
         <>
           <StepField label="Label" value={step.label} onChange={(value) => update('label', value)} />
-          <StepField label="Selector" value={step.selector} onChange={(value) => update('selector', value)} />
+          <StepField label="Instruction" value={step.instruction} onChange={(value) => update('instruction', value)} />
+          <StepField label="Sample text (optional)" value={step.sampleText ?? ''} onChange={(value) => update('sampleText', value)} />
+          <StepSelect
+            label="Result type"
+            value={step.resultType}
+            options={[
+              { value: 'text', label: 'Plain text' },
+              { value: 'url', label: 'URL' },
+              { value: 'json', label: 'JSON object' },
+            ]}
+            onChange={(value) => update('resultType', value)}
+          />
+          <StepSelect
+            label="Result shape"
+            value={step.resultShape}
+            options={[{ value: 'single', label: 'Single / flat' }, { value: 'array', label: 'Array' }]}
+            onChange={(value) => update('resultShape', value)}
+          />
+          <StepField label="Scope selector (optional)" value={step.selector ?? ''} onChange={(value) => update('selector', value)} />
           <StepField label="Timeout (ms)" type="number" min={250} value={step.timeoutMs} onChange={(value) => update('timeoutMs', value)} />
         </>
       );
@@ -199,7 +258,12 @@ export function WorkflowStepsEditor({ projectId, workflow, onChange, onEnsureSav
                 <div className="step-fields">
                   <StepFields step={step} onChange={(updatedStep) => updateStep(index, updatedStep)} />
                 </div>
-                <StepArtifactsPanel projectId={projectId} step={step} onEnsureSaved={onEnsureSaved} />
+                <StepArtifactsPanel
+                  projectId={projectId}
+                  step={step}
+                  onEnsureSaved={onEnsureSaved}
+                  onStepChange={(updatedStep) => updateStep(index, updatedStep)}
+                />
               </section>
             ))}
           </div>

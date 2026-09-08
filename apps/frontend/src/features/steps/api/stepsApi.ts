@@ -16,7 +16,7 @@ export async function generateSteps(originalPrompt: string): Promise<Workflow> {
   return response.json() as Promise<Workflow>;
 }
 
-export async function executeSteps(projectId: string, workflow: Workflow): Promise<string> {
+export async function executeSteps(projectId: string, workflow: Workflow): Promise<unknown> {
   const response = await fetch(`/api/steps/execute/${projectId}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -28,7 +28,7 @@ export async function executeSteps(projectId: string, workflow: Workflow): Promi
     throw new ApiError(body?.error ?? 'Could not execute workflow steps', response.status);
   }
 
-  const body = await response.json() as { result: string };
+  const body = await response.json() as { result: unknown };
   return body.result;
 }
 

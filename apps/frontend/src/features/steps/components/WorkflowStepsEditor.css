@@ -18,6 +18,6 @@
 .step-number { display: grid; width: 23px; height: 23px; place-items: center; border-radius: 7px; color: #5549d2; background: #ebe9ff; font-size: 10px; font-weight: 800; }
 .step-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
 .step-field { display: flex; min-width: 0; flex-direction: column; gap: 6px; color: #858b96; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.step-field input { width: 100%; height: 37px; padding: 0 10px; border: 1px solid #dcdee4; border-radius: 7px; outline: none; color: #3e434d; background: #fff; font-size: 12px; letter-spacing: 0; text-transform: none; }
-.step-field input:focus { border-color: #8c83ec; box-shadow: 0 0 0 3px rgb(93 80 230 / 9%); }
+.step-field input, .step-field select { width: 100%; height: 37px; padding: 0 10px; border: 1px solid #dcdee4; border-radius: 7px; outline: none; color: #3e434d; background: #fff; font-size: 12px; letter-spacing: 0; text-transform: none; }
+.step-field input:focus, .step-field select:focus { border-color: #8c83ec; box-shadow: 0 0 0 3px rgb(93 80 230 / 9%); }
 @media (max-width: 700px) { .step-card header { align-items: flex-start; flex-direction: column; } .step-fields { grid-template-columns: 1fr; } }

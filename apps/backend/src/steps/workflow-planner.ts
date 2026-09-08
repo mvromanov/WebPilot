@@ -20,7 +20,8 @@ Convert the user's browser task into a workflow using only these ordered step ty
 - waitUntilHidden: selector, pollMs, label
 - gotoIfUrlMissing: urlFragment, url
 - act: instruction, optional scopeSelector, label
-- extractText: selector, timeoutMs, label
+- extractText: instruction, optional sampleText, resultType (text, url, or json), resultShape
+  (single or array), optional selector, timeoutMs, label
 
 Use CSS selectors unless the requested text requires XPath. Preserve every wait,
 verification, action, and extraction requested by the user. Return only a workflow
@@ -28,7 +29,10 @@ that conforms to the supplied JSON schema. All timeoutMs and pollMs values are
 integer milliseconds and must be at least 250. Never invent a data-testid or a
 selector that the user did not provide. A manual login instruction must always
 produce a waitFor step followed immediately by a waitUntilHidden step using the
-same login selector.
+same login selector. Use resultType "text" for plain text, "url" for links or image
+URLs, and "json" for a flat key/value object. Use resultShape "array" only when
+multiple results are requested. When the user provides an example of the text to
+extract, preserve it in sampleText so it can be used to identify the matching element.
 `.trim();
 
 function parseCompletion(completion: LmStudioCompletion): unknown {

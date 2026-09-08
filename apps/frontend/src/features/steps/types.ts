@@ -6,7 +6,16 @@ export type WorkflowStep = StepIdentity & (
   | { type: 'waitFor'; selector: string; timeoutMs: number; label: string }
   | { type: 'waitUntilHidden'; selector: string; pollMs: number; label: string }
   | { type: 'act'; instruction: string; scopeSelector?: string; label: string }
-  | { type: 'extractText'; selector: string; timeoutMs: number; label: string }
+  | {
+      type: 'extractText';
+      instruction: string;
+      sampleText?: string;
+      resultType: 'text' | 'url' | 'json';
+      resultShape: 'single' | 'array';
+      selector?: string;
+      timeoutMs: number;
+      label: string;
+    }
 );
 
 export type Workflow = {

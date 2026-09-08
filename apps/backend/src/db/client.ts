@@ -39,6 +39,22 @@ for (const project of savedWorkflows) {
         step.id = randomUUID();
         changed = true;
       }
+      if (step.type === 'extractText') {
+        if (typeof step.instruction !== 'string') {
+          step.instruction = typeof step.label === 'string'
+            ? `Extract ${step.label}`
+            : 'Extract the requested content';
+          changed = true;
+        }
+        if (step.resultType !== 'text' && step.resultType !== 'url' && step.resultType !== 'json') {
+          step.resultType = 'text';
+          changed = true;
+        }
+        if (step.resultShape !== 'single' && step.resultShape !== 'array') {
+          step.resultShape = 'single';
+          changed = true;
+        }
+      }
     }
 
     if (changed) saveBackfilledWorkflow.run(JSON.stringify(workflow), project.id);

@@ -2,11 +2,12 @@ import { useState, type SyntheticEvent } from 'react';
 import {
   createStepArtifact,
   deleteStepArtifact,
+  findExtractionInstruction,
   findLocatorOptions,
   listStepArtifacts,
   loadStepArtifact,
 } from '../api/artifactsApi';
-import type { LocatorOption, StepArtifact, StepArtifactKind } from '../types/artifacts';
+import type { ExtractionInstructionSuggestion, LocatorOption, StepArtifact, StepArtifactKind } from '../types/artifacts';
 import type { WorkflowStep } from '../types';
 import './StepArtifactsPanel.css';
 
@@ -14,6 +15,7 @@ type Props = {
   projectId: string;
   step: WorkflowStep;
   onEnsureSaved: () => Promise<boolean>;
+  onStepChange: (step: WorkflowStep) => void;
 };
 
 function formatBytes(bytes: number) {
@@ -22,7 +24,7 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function StepArtifactsPanel({ projectId, step, onEnsureSaved }: Props) {
+export function StepArtifactsPanel({ projectId, step, onEnsureSaved, onStepChange }: Props) {
   const stepId = step.id;
   const [artifacts, setArtifacts] = useState<StepArtifact[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -30,11 +32,13 @@ export function StepArtifactsPanel({ projectId, step, onEnsureSaved }: Props) {
   const [isAdding, setIsAdding] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [locatingId, setLocatingId] = useState<string | null>(null);
+  const [findingInstructionId, setFindingInstructionId] = useState<string | null>(null);
   const [kind, setKind] = useState<StepArtifactKind>('dom');
   const [content, setContent] = useState('');
   const [preview, setPreview] = useState<{ id: string; content: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [locatorResults, setLocatorResults] = useState<Record<string, LocatorOption[]>>({});
+  const [instructionSuggestions, setInstructionSuggestions] = useState<Record<string, ExtractionInstructionSuggestion[]>>({});
   const supportsLocators = step.type !== 'goto' && step.type !== 'gotoIfUrlMissing';
 
   const fetchArtifacts = async () => {
@@ -101,6 +105,11 @@ export function StepArtifactsPanel({ projectId, step, onEnsureSaved }: Props) {
         delete next[artifact.id];
         return next;
       });
+      setInstructionSuggestions((current) => {
+        const next = { ...current };
+        delete next[artifact.id];
+        return next;
+      });
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Could not delete artifact');
     } finally {
@@ -118,6 +127,32 @@ export function StepArtifactsPanel({ projectId, step, onEnsureSaved }: Props) {
       setError(caughtError instanceof Error ? caughtError.message : 'Could not find locator options');
     } finally {
       setLocatingId(null);
+    }
+  };
+
+  const handleFindInstruction = async (artifact: StepArtifact) => {
+    setFindingInstructionId(artifact.id);
+    setError(null);
+    try {
+      const suggestions = await findExtractionInstruction(projectId, stepId, artifact.id, step);
+      setInstructionSuggestions((current) => ({ ...current, [artifact.id]: suggestions }));
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Could not find an extraction instruction');
+    } finally {
+      setFindingInstructionId(null);
+    }
+  };
+
+  const applyLocator = (locator: string) => {
+    switch (step.type) {
+      case 'act':
+        onStepChange({ ...step, scopeSelector: locator });
+        break;
+      case 'waitFor':
+      case 'waitUntilHidden':
+      case 'extractText':
+        onStepChange({ ...step, selector: locator });
+        break;
     }
   };
 
@@ -170,6 +205,16 @@ export function StepArtifactsPanel({ projectId, step, onEnsureSaved }: Props) {
                   <code title={artifact.contentHash}>{artifact.contentHash.slice(0, 12)}…</code>
                 </div>
                 <div className="artifact-actions">
+                  {step.type === 'extractText' && (
+                    <button
+                      type="button"
+                      className="artifact-link-action"
+                      disabled={findingInstructionId === artifact.id}
+                      onClick={() => void handleFindInstruction(artifact)}
+                    >
+                      {findingInstructionId === artifact.id ? 'Finding…' : 'Find instruction'}
+                    </button>
+                  )}
                   <button
                     type="button"
                     disabled={!supportsLocators || locatingId === artifact.id}
@@ -196,9 +241,35 @@ export function StepArtifactsPanel({ projectId, step, onEnsureSaved }: Props) {
                           <p><strong>Targets:</strong> {option.targets}</p>
                           <p>{option.whyUseIt}</p>
                         </div>
-                        <div className="stability-score" title="Stability score">
-                          <strong>{option.stabilityScore}</strong><span>/100</span>
+                        <div className="locator-option-actions">
+                          <div className="stability-score" title="Stability score">
+                            <strong>{option.stabilityScore}</strong><span>/100</span>
+                          </div>
+                          <button type="button" onClick={() => applyLocator(option.locator)}>Apply</button>
                         </div>
+                      </section>
+                    ))}
+                  </div>
+                )}
+                {instructionSuggestions[artifact.id] && step.type === 'extractText' && (
+                  <div className="instruction-suggestions">
+                    <div className="instruction-suggestions-heading">
+                      <strong>Ranked instruction suggestions</strong>
+                      <span>Best match first</span>
+                    </div>
+                    {instructionSuggestions[artifact.id].map((suggestion) => (
+                      <section className="instruction-suggestion" key={`${suggestion.rank}-${suggestion.instruction}`}>
+                        <div className="instruction-rank">#{suggestion.rank}</div>
+                        <div>
+                          <p>{suggestion.instruction}</p>
+                          <small>{suggestion.why}</small>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => onStepChange({ ...step, instruction: suggestion.instruction })}
+                        >
+                          Apply
+                        </button>
                       </section>
                     ))}
                   </div>

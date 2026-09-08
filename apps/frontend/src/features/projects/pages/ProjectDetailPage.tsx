@@ -27,15 +27,22 @@ export function ProjectDetailPage() {
   const [originalPrompt, setOriginalPrompt] = useState('');
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [executionError, setExecutionError] = useState<string | null>(null);
-  const [executionResult, setExecutionResult] = useState<string | null>(null);
+  const [executionResult, setExecutionResult] = useState<unknown>(null);
   const stopRequestedRef = useRef(false);
 
-  const visualWorkflow = useMemo(() => {
-    if (!generatedJson) return null;
+  const parsedWorkflow = useMemo<{ workflow: Workflow | null; error: string | null }>(() => {
+    if (!generatedJson.trim()) return { workflow: null, error: null };
     try {
-      return JSON.parse(generatedJson) as Workflow;
-    } catch {
-      return null;
+      const parsed = JSON.parse(generatedJson) as unknown;
+      if (!parsed || typeof parsed !== 'object' || !Array.isArray((parsed as { steps?: unknown }).steps)) {
+        return { workflow: null, error: 'Workflow JSON must be an object containing a steps array.' };
+      }
+      return { workflow: parsed as Workflow, error: null };
+    } catch (caughtError) {
+      return {
+        workflow: null,
+        error: caughtError instanceof SyntaxError ? caughtError.message : 'Workflow JSON is invalid.',
+      };
     }
   }, [generatedJson]);
 
@@ -86,13 +93,13 @@ export function ProjectDetailPage() {
   };
 
   const handleSave = async () => {
-    if (!project || !originalPrompt.trim()) return false;
+    if (!project || !originalPrompt.trim() || parsedWorkflow.error) return false;
     setIsSaving(true);
     setError(null);
     setSaveMessage(null);
 
     try {
-      const steps = generatedJson ? JSON.parse(generatedJson) as Workflow : null;
+      const steps = generatedJson.trim() ? parsedWorkflow.workflow : null;
       const updatedProject = await updateProject(project.id, { originalPrompt, steps });
       setProject(updatedProject);
       setOriginalPrompt(updatedProject.originalPrompt);
@@ -108,15 +115,14 @@ export function ProjectDetailPage() {
   };
 
   const handleExecute = async () => {
-    if (!project || !generatedJson) return;
+    if (!project || !parsedWorkflow.workflow || parsedWorkflow.error) return;
     setIsExecuting(true);
     stopRequestedRef.current = false;
     setExecutionError(null);
     setExecutionResult(null);
 
     try {
-      const workflow = JSON.parse(generatedJson) as Workflow;
-      setExecutionResult(await executeSteps(project.id, workflow));
+      setExecutionResult(await executeSteps(project.id, parsedWorkflow.workflow));
     } catch (caughtError) {
       if (stopRequestedRef.current) return;
       setExecutionError(caughtError instanceof Error ? caughtError.message : 'Could not execute workflow steps');
@@ -159,7 +165,7 @@ export function ProjectDetailPage() {
       <div className="detail-heading">
         <div><p className="section-label">Project</p><h1>{project.name}</h1></div>
         <div className="detail-actions">
-          <button className="primary-button" type="button" disabled={isExecuting || !generatedJson} onClick={handleExecute}>
+          <button className="primary-button" type="button" disabled={isExecuting || !parsedWorkflow.workflow || Boolean(parsedWorkflow.error)} onClick={handleExecute}>
             {isExecuting ? 'Executing…' : 'Execute'}
           </button>
           {isExecuting && (
@@ -167,7 +173,7 @@ export function ProjectDetailPage() {
               {isStopping ? 'Stopping…' : 'Stop'}
             </button>
           )}
-          <button className="secondary-button" type="button" disabled={isSaving || !originalPrompt.trim()} onClick={handleSave}>{isSaving ? 'Saving…' : 'Save'}</button>
+          <button className="secondary-button" type="button" disabled={isSaving || !originalPrompt.trim() || Boolean(parsedWorkflow.error)} onClick={handleSave}>{isSaving ? 'Saving…' : 'Save'}</button>
           <button className="danger-button" type="button" disabled={isDeleting} onClick={handleDelete}>{isDeleting ? 'Deleting…' : 'Delete project'}</button>
         </div>
       </div>
@@ -195,15 +201,21 @@ export function ProjectDetailPage() {
         <label className="generated-json-field">
           <span>Generated steps JSON <small>Saved with the project when you click Save</small></span>
           <textarea
-            readOnly
             rows={16}
             value={generatedJson}
+            aria-invalid={Boolean(parsedWorkflow.error)}
+            onChange={(event) => {
+              setGeneratedJson(event.target.value);
+              setSaveMessage(null);
+              setError(null);
+            }}
             placeholder="Click Generate to preview the workflow JSON. It is not saved yet."
           />
+          {parsedWorkflow.error && <small className="json-error" role="alert">{parsedWorkflow.error}</small>}
         </label>
         <WorkflowStepsEditor
           projectId={project.id}
-          workflow={visualWorkflow}
+          workflow={parsedWorkflow.workflow}
           onEnsureSaved={handleSave}
           onChange={(workflow) => {
             setGeneratedJson(JSON.stringify(workflow, null, 2));
@@ -211,10 +223,10 @@ export function ProjectDetailPage() {
           }}
         />
         {executionError && <p className="form-error" role="alert">{executionError}</p>}
-        {executionResult && (
+        {executionResult !== null && (
           <div className="execution-result" role="status">
             <span>Execution result</span>
-            <pre>{executionResult}</pre>
+            <pre>{typeof executionResult === 'string' ? executionResult : JSON.stringify(executionResult, null, 2)}</pre>
           </div>
         )}
         <dl>

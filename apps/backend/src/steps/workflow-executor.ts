@@ -5,8 +5,14 @@ import {
   Stagehand,
   type StagehandBrowser,
 } from '@browserbasehq/stagehand';
+import { mkdir } from 'node:fs/promises';
+import { z } from 'zod';
+import { env } from '../config/env.js';
 import { lmStudio } from './lm-studio-client.js';
 import type { Workflow } from './workflow.schema.js';
+
+const flatJsonValueSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+const flatJsonObjectSchema = z.record(z.string(), flatJsonValueSchema);
 
 function requireSuccessfulAction(label: string, result: ActResult): void {
   if (!result.data.success || result.data.actions.length === 0) {
@@ -21,8 +27,9 @@ export async function executeWorkflowSteps(
   workflow: Workflow,
   page: Page,
   stagehand: Stagehand,
-): Promise<string> {
-  let result: string | undefined;
+): Promise<unknown> {
+  let result: unknown;
+  let hasResult = false;
 
   for (const step of workflow.steps) {
     console.log(`Running step: ${'label' in step ? step.label : step.type}`);
@@ -55,19 +62,36 @@ export async function executeWorkflowSteps(
         break;
       }
       case 'extractText': {
-        const locator = page.locator(step.selector);
-        const deadline = Date.now() + step.timeoutMs;
-        while (!result && Date.now() < deadline) {
-          if (await locator.count() > 0) result = (await locator.innerText()).trim() || undefined;
-          if (!result) await page.waitForTimeout(500);
+        const extract = stagehand.extract.bind(stagehand) as unknown as (
+          instruction: string,
+          schema: unknown,
+          options: unknown,
+        ) => Promise<{ data: unknown }>;
+        const options = {
+          page,
+          timeout: step.timeoutMs,
+          ...(step.selector ? { locator: page.locator(step.selector) } : {}),
+        };
+        if (step.resultType === 'text' && step.resultShape === 'single') {
+          result = (await extract(step.instruction, z.string(), options)).data;
+        } else if (step.resultType === 'text') {
+          result = (await extract(step.instruction, z.array(z.string()), options)).data;
+        } else if (step.resultType === 'url' && step.resultShape === 'single') {
+          result = (await extract(step.instruction, z.string().url(), options)).data;
+        } else if (step.resultType === 'url') {
+          result = (await extract(step.instruction, z.array(z.string().url()), options)).data;
+        } else if (step.resultShape === 'single') {
+          result = (await extract(step.instruction, flatJsonObjectSchema, options)).data;
+        } else {
+          result = (await extract(step.instruction, z.array(flatJsonObjectSchema), options)).data;
         }
-        if (!result) throw new Error(`${step.label} remained empty`);
+        hasResult = true;
         break;
       }
     }
   }
 
-  return result ?? 'Workflow completed successfully';
+  return hasResult ? result : 'Workflow completed successfully';
 }
 
 type ProjectSession = {
@@ -125,14 +149,18 @@ export async function stopWorkflow(projectId: string): Promise<boolean> {
   return true;
 }
 
-export async function executeWorkflow(projectId: string, workflow: Workflow): Promise<string> {
+export async function executeWorkflow(projectId: string, workflow: Workflow): Promise<unknown> {
   if (activeSessions.has(projectId)) throw new SessionAlreadyActiveError(projectId);
 
   const session: ProjectSession = { stopRequested: false };
   activeSessions.set(projectId, session);
 
   try {
-    const browser = await localBrowser.launch({ headless: false });
+    await mkdir(env.chromeProfilePath, { recursive: true });
+    const browser = await localBrowser.launch({
+      headless: false,
+      userDataDir: env.chromeProfilePath,
+    });
     session.browser = browser;
     if (session.stopRequested) throw new WorkflowStoppedError();
 

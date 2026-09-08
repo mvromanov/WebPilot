@@ -37,6 +37,11 @@ Node.js server at `http://localhost:3000`.
 Copy `apps/backend/.env.example` to `apps/backend/.env` to override the default
 backend configuration.
 
+Set `CHROME_PROFILE_PATH` in the backend environment to the Chrome user-data
+directory that Stagehand should reuse between workflow runs. The default is
+`apps/backend/data/chrome-profile`. Do not run multiple browsers against the same
+profile directory concurrently because Chrome locks profiles while they are open.
+
 ## Projects API
 
 Projects are stored locally in `apps/backend/data/webpilot.db` by default. The
@@ -59,6 +64,7 @@ DOM/HTML should be stored as a compressed file rather than embedded in `steps_js
 - `GET /api/projects/:projectId/steps/:stepId/artifacts/:artifactId` — fetch metadata and content
 - `DELETE /api/projects/:projectId/steps/:stepId/artifacts/:artifactId` — delete an artifact
 - `POST /api/projects/:projectId/steps/:stepId/locator-options` — rank locator options from an artifact
+- `POST /api/projects/:projectId/steps/:stepId/extraction-instruction` — suggest a Stagehand extraction instruction
 
 Create requests accept JSON with a required `name`, required `originalPrompt`,
 and optional `description`:

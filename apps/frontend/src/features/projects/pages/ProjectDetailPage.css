@@ -16,6 +16,9 @@
 .generated-json-field { display: flex; flex-direction: column; gap: 10px; margin: 0 0 28px; color: #9297a1; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .generated-json-field small { font-weight: 500; text-transform: none; }
 .generated-json-field textarea { width: 100%; padding: 16px; border: 1px solid #e1e3e8; border-radius: 9px; outline: none; color: #343943; background: #f8f8fa; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; line-height: 1.6; letter-spacing: 0; resize: vertical; text-transform: none; }
+.generated-json-field textarea:focus { border-color: #8c83ec; box-shadow: 0 0 0 3px rgb(93 80 230 / 10%); }
+.generated-json-field textarea[aria-invalid="true"] { border-color: #d98c94; }
+.generated-json-field .json-error { color: #b42332; font-weight: 500; letter-spacing: 0; text-transform: none; }
 .execution-result { margin: 0 0 28px; }
 .execution-result > span { color: #9297a1; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .execution-result pre { margin: 10px 0 0; padding: 16px; overflow: auto; border: 1px solid #d9ece3; border-radius: 9px; color: #27624a; background: #f2faf6; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; }

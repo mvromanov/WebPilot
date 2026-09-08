@@ -1,5 +1,5 @@
 import { ApiError } from '../../projects/api/projectsApi';
-import type { LocatorOption, StepArtifact, StepArtifactKind, StepArtifactWithContent } from '../types/artifacts';
+import type { ExtractionInstructionSuggestion, LocatorOption, StepArtifact, StepArtifactKind, StepArtifactWithContent } from '../types/artifacts';
 import type { WorkflowStep } from '../types';
 
 type ApiResponse<T> = { data: T };
@@ -66,4 +66,19 @@ export async function findLocatorOptions(
   });
   if (!response.ok) throw await readError(response, 'Could not find locator options');
   return ((await response.json()) as { options: LocatorOption[] }).options;
+}
+
+export async function findExtractionInstruction(
+  projectId: string,
+  stepId: string,
+  artifactId: string,
+  operation: WorkflowStep,
+): Promise<ExtractionInstructionSuggestion[]> {
+  const response = await fetch(`/api/projects/${projectId}/steps/${stepId}/extraction-instruction`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ artifactId, operation }),
+  });
+  if (!response.ok) throw await readError(response, 'Could not find an extraction instruction');
+  return ((await response.json()) as { suggestions: ExtractionInstructionSuggestion[] }).suggestions;
 }

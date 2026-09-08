@@ -1,6 +1,9 @@
 # IDEs
 .idea/
 
+#data
+apps/backend/data/
+
 # Logs
 logs
 *.log

@@ -22,6 +22,7 @@
 .artifact-actions { display: flex; gap: 4px; }
 .artifact-actions button { padding: 4px 6px; border: 0; border-radius: 4px; color: #6258c8; background: transparent; font-size: 9px; font-weight: 700; cursor: pointer; }
 .artifact-actions button:hover { background: #eeecff; }
+.artifact-actions .artifact-link-action { text-decoration: underline; text-underline-offset: 2px; }
 .artifact-actions button:disabled { color: #b6bac2; cursor: not-allowed; }
 .artifact-actions .artifact-delete { color: #ae4852; }
 .artifact-item textarea { grid-column: 1 / -1; margin-top: 3px; }
@@ -38,4 +39,15 @@
 .stability-score { min-width: 42px; color: #25815f; text-align: right; }
 .stability-score strong { color: inherit; font-size: 14px; }
 .stability-score span { color: #8da59b; font-size: 8px; }
+.locator-option-actions { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; gap: 8px; }
+.locator-option-actions > button, .instruction-suggestion > button { flex: 0 0 auto; min-height: 28px; padding: 0 9px; border: 0; border-radius: 6px; color: #fff; background: #6258c8; font-size: 9px; font-weight: 700; cursor: pointer; }
+.instruction-suggestions { display: grid; grid-column: 1 / -1; gap: 8px; margin-top: 5px; padding-top: 12px; border-top: 1px solid #e8e9ec; }
+.instruction-suggestions-heading { display: flex; align-items: center; justify-content: space-between; }
+.instruction-suggestions-heading strong { color: #464b55; font-size: 10px; }
+.instruction-suggestions-heading span { color: #858b95; font-size: 9px; }
+.instruction-suggestion { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: flex-start; gap: 10px; padding: 12px; border: 1px solid #dcd9f6; border-radius: 7px; background: #faf9ff; }
+.instruction-rank { display: grid; width: 27px; height: 27px; place-items: center; border-radius: 7px; color: #564bd0; background: #e9e7ff; font-size: 10px; font-weight: 800; }
+.instruction-suggestion > div { min-width: 0; }
+.instruction-suggestion p { margin: 0 0 7px; color: #464b55; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10px; line-height: 1.55; }
+.instruction-suggestion small { color: #858b95; font-size: 9px; line-height: 1.5; }
 @media (max-width: 700px) { .artifact-item { grid-template-columns: 1fr; } .artifact-actions { justify-content: flex-end; } }

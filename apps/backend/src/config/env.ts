@@ -19,4 +19,7 @@ export const env = {
   artifactsPath: process.env.ARTIFACTS_PATH
     ? path.resolve(process.cwd(), process.env.ARTIFACTS_PATH)
     : fileURLToPath(new URL('../../data/artifacts', import.meta.url)),
+  chromeProfilePath: process.env.CHROME_PROFILE_PATH
+    ? path.resolve(process.cwd(), process.env.CHROME_PROFILE_PATH)
+    : fileURLToPath(new URL('../../data/chrome-profile', import.meta.url)),
 };

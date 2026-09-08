@@ -36,6 +36,10 @@ workflow operation. Every locator must be directly supported by attributes, text
 or structure visible in the artifact. Never invent an id, class, data attribute, role,
 label, or text value.
 
+For an "extractText" operation, sampleText is an example of the expected extracted
+content. Use it as a strong hint to identify the correct element in the artifact,
+allowing insignificant whitespace differences, but do not assume it is a selector.
+
 Prefer, in order: stable explicit test/automation attributes; stable unique ids; semantic
 roles with accessible names; form labels/names; stable business attributes; concise text;
 and short structural selectors. Penalize generated ids/classes, positional selectors,
@@ -66,7 +70,7 @@ function parseCompletion(completion: LmStudioCompletion): unknown {
   }
 }
 
-function prepareArtifact(content: string): { content: string; truncated: boolean } {
+export function prepareArtifact(content: string): { content: string; truncated: boolean } {
   const cleaned = content
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')

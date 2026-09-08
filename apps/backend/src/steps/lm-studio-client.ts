@@ -32,6 +32,17 @@ function parseStructuredJson(text: string, completion: OpenAIResponse): unknown 
   }
 }
 
+export function sanitizeLmStudioJsonSchema(schema: unknown): unknown {
+  if (Array.isArray(schema)) return schema.map(sanitizeLmStudioJsonSchema);
+  if (!schema || typeof schema !== 'object') return schema;
+
+  return Object.fromEntries(
+    Object.entries(schema as Record<string, unknown>)
+      .filter(([key]) => key !== 'propertyNames')
+      .map(([key, value]) => [key, sanitizeLmStudioJsonSchema(value)]),
+  );
+}
+
 export const lmStudio: ClientLLM = {
   async generate(params) {
     const messages = params.messages.map((message) => {
@@ -84,7 +95,7 @@ export const lmStudio: ClientLLM = {
                 json_schema: {
                   name: params.responseFormat.name,
                   description: params.responseFormat.description,
-                  schema: params.responseFormat.schema,
+                  schema: sanitizeLmStudioJsonSchema(params.responseFormat.schema),
                   strict: true,
                 },
               },
